@@ -1,0 +1,55 @@
+.container {
+    max-width: 800px;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin: 5em auto;
+}
+
+h1 {
+    font-size: 2em;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+p {
+    font-size: 1.1em;
+    color: #282c34;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+ol {
+    padding-left: 0;
+    margin-left: 0;
+}
+
+li {
+    padding-left: 1em;
+    margin-left: 3em;
+}
+
+h2 {
+    font-size: 1.5em;
+    color: #444;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.features-list, .advantages-list {
+    list-style-type: disc;
+    color: #282c34;
+}
+
+.features-list li, .advantages-list li {
+    margin-bottom: 10px;
+}
+
+.features-list li strong, .advantages-list li strong {
+    color: #333;
+}
+.empty {
+    height: 1em;
+}
