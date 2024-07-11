@@ -120,21 +120,21 @@ public class TournamentService {
     }
 
     public ResponseEntity<Object> addNewTournamentMatch(AddMatchDTO dto, Long tournamentId) {
-        CategoryTypeEnum type = tournamentRepository.findByName(dto.getTournamentName()).orElseThrow().getCategory().getType();
-        Club club = tournamentRepository.findByName(dto.getTournamentName()).orElseThrow().getClub();
+        CategoryTypeEnum type = tournamentRepository.findByTournamentId(dto.getTournamentId()).orElseThrow().getCategory().getType();
+        Club club = tournamentRepository.findByTournamentId(dto.getTournamentId()).orElseThrow().getClub();
         Match newMatch = switch (type) {
             case CategoryTypeEnum.SINGLES ->
                     new Match(dto.getMatchTimestamp(), dto.getMatchResult(), dto.getDuration(), dto.getStage(),
                             playerRepository.findByOib(dto.getOpponent1()).orElseThrow(),
                             playerRepository.findByOib(dto.getOpponent2()).orElseThrow(),
                             null, null, courtRepository.findAll().stream().filter(c -> c.getClub().equals(club) &&
-                            c.getName().equals(dto.getCourtName())).findFirst().get(), tournamentRepository.findByName(dto.getTournamentName()).orElseThrow());
+                            c.getName().equals(dto.getCourtName())).findFirst().get(), tournamentRepository.findByTournamentId(dto.getTournamentId()).orElseThrow());
             case CategoryTypeEnum.DOUBLES ->
                     new Match(dto.getMatchTimestamp(), dto.getMatchResult(), dto.getDuration(), dto.getStage(),
                             null, null, pairRepository.findByPairId(Long.valueOf(dto.getOpponent1())).orElseThrow(),
                             pairRepository.findByPairId(Long.valueOf(dto.getOpponent2())).orElseThrow(),
                             courtRepository.findAll().stream().filter(c -> c.getClub().equals(club) &&
-                                    c.getName().equals(dto.getCourtName())).findFirst().get(), tournamentRepository.findByName(dto.getTournamentName()).orElseThrow());
+                                    c.getName().equals(dto.getCourtName())).findFirst().get(), tournamentRepository.findByTournamentId(dto.getTournamentId()).orElseThrow());
         };
         matchRepository.save(newMatch);
 
@@ -164,12 +164,12 @@ public class TournamentService {
             throw new NoSuchElementException();
         }
 
-        CategoryTypeEnum type = tournamentRepository.findByName(dto.getTournamentName()).orElseThrow().getCategory().getType();
-        Club club = tournamentRepository.findByName(dto.getTournamentName()).orElseThrow().getClub();
+        CategoryTypeEnum type = tournamentRepository.findByTournamentId(dto.getTournamentId()).orElseThrow().getCategory().getType();
+        Club club = tournamentRepository.findByTournamentId(dto.getTournamentId()).orElseThrow().getClub();
         Match changedMatch = matchRepository.findByMatchId(matchId).orElseThrow();
         changedMatch.setMatchResult(dto.getMatchResult());
         changedMatch.setMatchTimestamp(dto.getMatchTimestamp());
-        changedMatch.setTournament(tournamentRepository.findByName(dto.getTournamentName()).orElseThrow());
+        changedMatch.setTournament(tournamentRepository.findByTournamentId(dto.getTournamentId()).orElseThrow());
         changedMatch.setDuration(dto.getDuration());
         changedMatch.setCourt(courtRepository.findAll().stream().filter(c -> c.getClub().equals(club) &&
                 c.getName().equals(dto.getCourtName())).findFirst().get());

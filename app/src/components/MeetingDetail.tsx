@@ -4,25 +4,23 @@ import {Link, useNavigate, useParams} from "react-router-dom";
 import './ClubManager.css'
 import {Button, Form} from "react-bootstrap";
 
-interface Training {
-    trainingId: number;
-    trainingTimestamp: string;
-    duration: string;
-    description: string;
+interface Meeting {
+    meetingId: number;
+    meetingTimestamp: string;
+    clubName: string;
+    agenda: string;
     notes: string;
-    coach: string;
-    players: Set<string>;
+    attendees: Set<string>;
 }
 
-function TrainingDetail() {
-    const { coachId, trainingId } = useParams<{ coachId: string, trainingId: string }>();
-    const [training, setTraining] = useState<Training>();
+function MeetingDetail() {
+    const { clubId, meetingId } = useParams<{ clubId: string, meetingId: string }>();
+    const [meeting, setMeeting] = useState<Meeting>();
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
-    const [trainingTimestamp, setTrainingTimestamp] = useState("");
-    const [duration, setDuration] = useState("");
-    const [description, setDescription] = useState("");
+    const [meetingTimestamp, setMeetingTimestamp] = useState("");
+    const [agenda, setAgenda] = useState("");
     const [notes, setNotes] = useState("");
     const [oibs, setOibs] = useState(['']);
     const [formError, setFormError] = useState("");
@@ -33,14 +31,14 @@ function TrainingDetail() {
     };
 
     useEffect(() => {
-        axios.get(`/coaches/${coachId}/training-sessions/${trainingId}`)
-            .then(response => setTraining(response.data))
-            .catch(error => console.error("Error fetching training session: ", error));
-    }, [trainingId, coachId])
+        axios.get(`/clubs/${clubId}/meetings/${meetingId}`)
+            .then(response => setMeeting(response.data))
+            .catch(error => console.error("Error fetching meeting: ", error));
+    }, [meetingId, clubId])
 
     const handleDeleteClick = async () => {
         try {
-            const response = await fetch(`/coaches/${coachId}/training-sessions/${trainingId}`, {
+            const response = await fetch(`/clubs/${clubId}/meetings/${meetingId}`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -48,14 +46,14 @@ function TrainingDetail() {
             });
 
             if (response.ok) {
-                alert("Trening uspješno obrisan!");
-                navigate(`/coaches/${coachId}/training-sessions`);
+                alert("Sastanak uspješno obrisan!");
+                navigate(`/clubs/${clubId}/meetings`);
             } else {
-                alert("Trening nije obrisan!");
+                alert("Sastanak nije obrisan!");
             }
         } catch (err) {
-            console.error("Error deleting training session: ", err);
-            alert("Pogreška pri brisanju treninga!");
+            console.error("Error deleting meeting: ", err);
+            alert("Pogreška pri brisanju sastanka!");
         }
     }
 
@@ -63,13 +61,13 @@ function TrainingDetail() {
         e.preventDefault();
 
         const requiredFields =[
-            trainingTimestamp,
-            description,
-            oibs
+            meetingTimestamp,
+            agenda,
+            oibs,
         ];
 
         if (requiredFields.some((field) => field === null || field === "")) {
-            setFormError("Potrebno je unijeti datum i vrijeme treninga, opis, trenera i prisutne igrače!");
+            setFormError("Potrebno je ispuniti datum i vrijeme sastanka, dnevni red, sudionike i klub!");
 
             if (errorRef.current) {
                 errorRef.current.scrollIntoView({
@@ -99,14 +97,12 @@ function TrainingDetail() {
 
         try {
             const formData = new FormData();
-            formData.append("trainingId", "");
-            formData.append("trainingTimestamp", trainingTimestamp);
-            formData.append("description", description);
+            formData.append("meetingTimestamp", meetingTimestamp);
+            formData.append("agenda", agenda);
             formData.append("notes", notes);
-            if (coachId != undefined) formData.append("coachId", coachId);
-            formData.append("duration", duration);
+            if (clubId != undefined) formData.append("clubId", clubId);
             oibs.forEach((oib, index) => {
-                formData.append("players", oib);
+                formData.append(`oibs`, oib);
             });
 
             const options = {
@@ -114,56 +110,58 @@ function TrainingDetail() {
                 body: formData,
             }
 
-            const res = await fetch(`/coaches/${coachId}/training-sessions/${trainingId}`, options);
+            const res = await fetch(`/clubs/${clubId}/meetings/${meetingId}`, options);
             if (res.status === 200) {
-                alert("Podaci o treningu uspješno ažurirani!");
+                alert("Podaci o sastanku uspješno ažurirani!");
                 window.scroll({
                     top: 0,
                     behavior: 'smooth'
                 });
+                navigate(`/clubs/${clubId}/transactions`);
             } else {
                 alert("Podaci nisu ažurirani!" + res.status);
             }
         } catch (err) {
             console.error(err);
-            alert("Pogreška pri ažuriranju podataka o treningu!");
+            alert("Pogreška pri ažuriranju podataka o sastanku!");
         }
     };
 
-    const handleTrainingTimestampChange = (e: {
+    const handleMeetingTimestampChange = (e: {
         target: { value: SetStateAction<string> };
-    }) => setTrainingTimestamp(e.target.value);
+    }) => setMeetingTimestamp(e.target.value);
     const handleNotesChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setNotes(e.target.value);
-    const handleDescriptionChange = (e: {
+    const handleAgendaChange = (e: {
         target: { value: SetStateAction<string> };
-    }) => setDescription(e.target.value);
+    }) => setAgenda(e.target.value);
     const handleOibChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
         const newOibs = oibs.slice();
         newOibs[index] = event.target.value;
         setOibs(newOibs);
     };
-    const handleDurationChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setDuration(e.target.value);
 
-    document.title = "Trening";
+    document.title = "Sastanak";
     return (
         <div>
             <div className="container">
-                <h1>Podaci o treningu</h1>
-                <p><strong>Datum i vrijeme treninga: </strong>{training?.trainingTimestamp}</p>
-                <p><strong>Trajanje: </strong>{training?.duration}</p>
-                <p><strong>Opis: </strong>{training?.description}</p>
-                <p><strong>Trener: </strong>{training?.coach}</p>
-                {training?.notes && <p><strong>Bilješke: </strong>{training.notes}</p>}
-                {training?.players && (
-                    <ol><p><strong>Prisutni tenisači:</strong></p>
-                        {[...(training?.players ?? new Set())].map((player) => (
-                            <li key={player}><p>{player}</p></li>
+                <h1>Podaci o sastanku</h1>
+                <p><strong>Datum i vrijeme sastanka: </strong>{meeting?.meetingTimestamp}</p>
+                <p><strong>Ime kluba: </strong>{meeting?.clubName}</p>
+                {meeting?.attendees.size && (
+                    <ol><p><strong>Prisutni:</strong></p>
+                        {[...(meeting?.attendees ?? new Set())].map((attendee) => (
+                            <li key={attendee}><p>{attendee}</p></li>
                         ))}
                     </ol>
+                )}
+                <p><strong>Dnevni red: </strong>{meeting?.agenda}</p>
+                {meeting?.notes && <p><strong>Bilješke: </strong>{meeting.notes}</p>}
+                {formError && (
+                    <div ref={errorRef} style={{color: 'red'}}>
+                        {formError}
+                    </div>
                 )}
                 <div className="empty"></div>
                 <div className="empty"></div>
@@ -180,7 +178,7 @@ function TrainingDetail() {
                             setShowDeleteButton(false)
                         }}
                     />
-                    <label>Promijeni podatke o treningu</label>
+                    <label>Promijeni podatke o sastanku</label>
                     <input
                         type="radio"
                         id="delete"
@@ -191,7 +189,7 @@ function TrainingDetail() {
                             setShowChangeButton(false)
                         }}
                     />
-                    <label>Izbriši podatke o treningu</label>
+                    <label>Izbriši podatke o sastanku</label>
                 </div>
                 {showDeleteButton && (
                     <button className="links" onClick={handleDeleteClick}>Potvrdi</button>
@@ -203,21 +201,21 @@ function TrainingDetail() {
                 )}
                 {showChangeButton && (
                     <Form onSubmit={handleChangeClick}>
-                        <Form.Group controlId="trainingTimestamp">
-                            <Form.Label className="label">Datum i vrijeme treninga</Form.Label>
+                        <Form.Group controlId="meetingTimestamp">
+                            <Form.Label className="label">Datum i vrijeme sastanka</Form.Label>
                             <Form.Control
                                 type="datetime-local"
-                                onChange={handleTrainingTimestampChange}
-                                value={trainingTimestamp}
+                                onChange={handleMeetingTimestampChange}
+                                value={meetingTimestamp}
                             />
                         </Form.Group>
-                        <Form.Group controlId="description">
-                            <Form.Label className="label">Opis</Form.Label>
+                        <Form.Group controlId="name">
+                            <Form.Label className="label">Dnevni red</Form.Label>
                             <Form.Control
                                 type="text"
-                                placeholder={training?.description}
-                                onChange={handleDescriptionChange}
-                                value={description}
+                                placeholder={meeting?.agenda}
+                                onChange={handleAgendaChange}
+                                value={agenda}
                                 className="control"
                             />
                         </Form.Group>
@@ -225,26 +223,16 @@ function TrainingDetail() {
                             <Form.Label className="label">Bilješke</Form.Label>
                             <Form.Control
                                 type="text"
-                                placeholder={training?.notes}
+                                placeholder={meeting?.notes}
                                 onChange={handleNotesChange}
                                 value={notes}
-                                className="control"
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="duration">
-                            <Form.Label className="label">Trajanje</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={training?.duration}
-                                onChange={handleDurationChange}
-                                value={duration}
                                 className="control"
                             />
                         </Form.Group>
                         {oibs.map((oib, index) => (
                             <div key={index}>
                                 <label>
-                                    OIB tenisača {index + 1}:
+                                    OIB sudionika {index + 1}:
                                     <input
                                         type="text"
                                         value={oib}
@@ -253,7 +241,7 @@ function TrainingDetail() {
                                 </label>
                             </div>
                         ))}
-                        <button type="button" onClick={addOibField}>Dodaj prisutnog tenisača</button>
+                        <button type="button" onClick={addOibField}>Dodaj sudionika</button>
                         <button type="submit" className="links" onClick={handleChangeClick}>Potvrdi</button>
                     </Form>
                 )}
@@ -263,4 +251,4 @@ function TrainingDetail() {
     )
 }
 
-export default TrainingDetail;
+export default MeetingDetail;

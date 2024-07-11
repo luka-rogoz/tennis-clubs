@@ -25,7 +25,6 @@ function TransactionDetail() {
     const [name, setName] = useState("");
     const [surname, setSurname] = useState("");
     const [oib, setOib] = useState("");
-    const [clubName, setClubName] = useState("");
     const [transactionTimestamp, setTransactionTimestamp] = useState("");
     const [price, setPrice] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("");
@@ -63,30 +62,6 @@ function TransactionDetail() {
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
 
-        const requiredFields =[
-            name,
-            surname,
-            oib,
-            clubName,
-            transactionTimestamp,
-            price,
-            paymentMethod,
-            description
-        ];
-
-        if (requiredFields.some((field) => field === null || field === "")) {
-            setFormError("Potrebno je ispuniti sva polja!");
-
-            if (errorRef.current) {
-                errorRef.current.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                });
-            }
-
-            return;
-        }
-
         const oibRegex = /^\d{11}$/;
         if (!oibRegex.test(oib)) {
             setFormError("Format oib-a je neispravan!");
@@ -120,7 +95,7 @@ function TransactionDetail() {
             formData.append("name", name);
             formData.append("surname", surname);
             formData.append("oib", oib);
-            formData.append("clubName", clubName);
+            if (clubId != undefined) formData.append("clubId", clubId);
             formData.append("transactionTimestamp", transactionTimestamp);
             formData.append("price", price);
             formData.append("paymentMethod", paymentMethod);
@@ -157,9 +132,6 @@ function TransactionDetail() {
     const handleOibChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setOib(e.target.value);
-    const handleClubNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setClubName(e.target.value);
     const handleTransactionTimestampChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setTransactionTimestamp(e.target.value);
@@ -228,16 +200,6 @@ function TransactionDetail() {
                 )}
                 {showChangeButton && (
                     <Form onSubmit={handleChangeClick}>
-                        <Form.Group controlId="clubName">
-                            <Form.Label className="label">Ime kluba</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={transaction?.clubName}
-                                onChange={handleClubNameChange}
-                                value={clubName}
-                                className="control"
-                            />
-                        </Form.Group>
                         <Form.Group controlId="name">
                             <Form.Label className="label">Ime osobe</Form.Label>
                             <Form.Control

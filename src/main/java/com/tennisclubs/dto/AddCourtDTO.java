@@ -4,12 +4,12 @@ import com.tennisclubs.entity.SurfaceEnum;
 
 public class AddCourtDTO {
     private String name;
-    private String clubName;
+    private Long clubId;
     private SurfaceEnum surface;
 
-    public AddCourtDTO(String name, String clubName, SurfaceEnum surface) {
+    public AddCourtDTO(String name, Long clubId, SurfaceEnum surface) {
         this.name = name;
-        this.clubName = clubName;
+        this.clubId = clubId;
         this.surface = surface;
     }
 
@@ -17,8 +17,8 @@ public class AddCourtDTO {
         return name;
     }
 
-    public String getClubName() {
-        return clubName;
+    public Long getClubId() {
+        return clubId;
     }
 
     public SurfaceEnum getSurface() {

@@ -1,5 +1,9 @@
 package com.tennisclubs.dto;
 
+import org.springframework.cglib.core.Local;
+
+import java.time.LocalDate;
+
 public class GetDoubleDTO {
     private Long pairId;
     private String player1oib;
@@ -9,8 +13,9 @@ public class GetDoubleDTO {
     private String player2name;
     private String player2surname;
     private Integer rank;
+    private LocalDate dateOfTermination;
 
-    public GetDoubleDTO(Long pairId, String player1oib, String player1name, String player1surname, String player2oib, String player2name, String player2surname, Integer rank) {
+    public GetDoubleDTO(Long pairId, String player1oib, String player1name, String player1surname, String player2oib, String player2name, String player2surname, Integer rank, LocalDate dateOfTermination) {
         this.pairId = pairId;
         this.player1oib = player1oib;
         this.player1name = player1name;
@@ -19,6 +24,7 @@ public class GetDoubleDTO {
         this.player2name = player2name;
         this.player2surname = player2surname;
         this.rank = rank;
+        this.dateOfTermination = dateOfTermination;
     }
 
     public Long getPairId() { return pairId; }
@@ -50,4 +56,6 @@ public class GetDoubleDTO {
     public Integer getRank() {
         return rank;
     }
+
+    public LocalDate getDateOfTermination() { return dateOfTermination; }
 }

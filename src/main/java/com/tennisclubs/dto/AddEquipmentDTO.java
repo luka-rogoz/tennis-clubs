@@ -1,20 +1,20 @@
 package com.tennisclubs.dto;
 
 public class AddEquipmentDTO {
-    private String clubName;
+    private Long clubId;
     private Integer quantity;
     private String name;
     private Double price;
 
-    public AddEquipmentDTO(String clubName, Integer quantity, String name, Double price) {
-        this.clubName = clubName;
+    public AddEquipmentDTO(Long clubId, Integer quantity, String name, Double price) {
+        this.clubId = clubId;
         this.quantity = quantity;
         this.name = name;
         this.price = price;
     }
 
-    public String getClubName() {
-        return clubName;
+    public Long getClubId() {
+        return clubId;
     }
 
     public Integer getQuantity() {

@@ -1,6 +1,8 @@
 package com.tennisclubs.entity;
 
 import jakarta.persistence.*;
+
+import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
@@ -21,6 +23,8 @@ public class Pair {
     @Column(unique = true)
     private Integer rank;
 
+    private LocalDate dateOfTermination;
+
     @OneToMany(mappedBy = "pair1")
     private Set<Match> doublesMatchesPlayedAsHosts;
 
@@ -29,10 +33,11 @@ public class Pair {
 
     public Pair() {}
 
-    public Pair(Player player1, Player player2, Integer rank) {
+    public Pair(Player player1, Player player2, Integer rank, LocalDate dateOfTermination) {
         this.player1 = player1;
         this.player2 = player2;
         this.rank = rank;
+        this.dateOfTermination = dateOfTermination;
     }
 
     public Long getPairId() {
@@ -66,6 +71,10 @@ public class Pair {
     public void setRank(Integer rank) {
         this.rank = rank;
     }
+
+    public LocalDate getDateOfTermination() { return dateOfTermination; }
+
+    public void setDateOfTermination(LocalDate dateOfTermination) { this.dateOfTermination = dateOfTermination; }
 
     public Set<Match> getDoublesMatchesPlayedAsHosts() {
         return doublesMatchesPlayedAsHosts;

@@ -13,6 +13,7 @@ interface Pair {
     player2name: string;
     player2surname: string;
     rank: number;
+    dateOfTermination: string;
 }
 
 function DoubleManager() {
@@ -24,6 +25,7 @@ function DoubleManager() {
     const [player2name, setPlayer2name] = useState("");
     const [player2surname, setPlayer2surname] = useState("");
     const [rank, setRank] = useState("");
+    const [dateOfTermination, setDateOfTermination] = useState("");
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
 
@@ -81,6 +83,7 @@ function DoubleManager() {
             formData.append("player2name", player2name);
             formData.append("player2surname", player2surname);
             formData.append("rank", rank);
+            formData.append("dateOfTermination", dateOfTermination);
 
             const options = {
                 method: "POST",
@@ -112,6 +115,7 @@ function DoubleManager() {
         setPlayer2name("");
         setPlayer2surname("");
         setRank("");
+        setDateOfTermination("");
     }
 
     const handlePlayer1oibChange = (e: {
@@ -135,6 +139,9 @@ function DoubleManager() {
     const handleRankChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setRank(e.target.value);
+    const handleDateOfTermination = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setDateOfTermination(e.target.value);
 
     document.title = "Parovi";
     return (
@@ -234,6 +241,14 @@ function DoubleManager() {
                             onChange={handleRankChange}
                             value={rank}
                             className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="dateOfTermination">
+                        <Form.Label className="label">Datum prestanka djelovanja para</Form.Label>
+                        <Form.Control
+                            type="date"
+                            onChange={handleDateOfTermination}
+                            value={dateOfTermination}
                         />
                     </Form.Group>
                     <Button variant="success" type="submit">

@@ -13,6 +13,7 @@ interface Pair {
     player2name: string;
     player2surname: string;
     rank: number;
+    dateOfTermination: string;
 }
 
 function DoubleDetail() {
@@ -28,6 +29,7 @@ function DoubleDetail() {
     const [player2name, setPlayer2name] = useState("");
     const [player2surname, setPlayer2surname] = useState("");
     const [rank, setRank] = useState("");
+    const [dateOfTermination, setDateOfTermination] = useState("");
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
 
@@ -84,6 +86,7 @@ function DoubleDetail() {
             formData.append("player2name", player2name);
             formData.append("player2surname", player2surname);
             formData.append("rank", rank);
+            formData.append("dateOfTermination", dateOfTermination);
 
             const options = {
                 method: "PUT",
@@ -128,6 +131,9 @@ function DoubleDetail() {
     const handleRankChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setRank(e.target.value);
+    const handleDateOfTermination = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setDateOfTermination(e.target.value);
 
     document.title = pair?.player1surname + "-" + pair?.player2surname;
     return (
@@ -137,6 +143,7 @@ function DoubleDetail() {
                 <p><strong>Tenisač 1: </strong>{pair?.player1name} {pair?.player1surname}, {pair?.player1oib}</p>
                 <p><strong>Tenisač 2: </strong>{pair?.player2name} {pair?.player2surname}, {pair?.player2oib}</p>
                 {pair?.rank && <p><strong>Rank: </strong>{pair.rank}</p>}
+                {pair?.dateOfTermination && <p><strong>Datum prestanka djelovanja para: </strong>{pair.dateOfTermination}</p>}
                 <p><strong>Ostalo:</strong></p>
                 <br/>
                 <Button href={`/doubles/${pairId}/doubles-matches`} className="links">Mečevi u paru</Button>
@@ -246,6 +253,14 @@ function DoubleDetail() {
                                 onChange={handleRankChange}
                                 value={rank}
                                 className="control"
+                            />
+                        </Form.Group>
+                        <Form.Group controlId="dateOfTermination">
+                            <Form.Label className="label">Datum prestanka djelovanja para</Form.Label>
+                            <Form.Control
+                                type="date"
+                                onChange={handleDateOfTermination}
+                                value={dateOfTermination}
                             />
                         </Form.Group>
                         <button type="submit" className="links" onClick={handleChangeClick}>Potvrdi</button>

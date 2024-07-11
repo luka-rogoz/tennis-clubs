@@ -8,14 +8,14 @@ public class AddMeetingDTO {
     private LocalDateTime meetingTimestamp;
     private String agenda;
     private String notes;
-    private String clubName;
+    private Long clubId;
     private Set<String> oibs;
 
-    public AddMeetingDTO(LocalDateTime meetingTimestamp, String agenda, String notes, String clubName, Set<String> oibs) {
+    public AddMeetingDTO(LocalDateTime meetingTimestamp, String agenda, String notes, Long clubId, Set<String> oibs) {
         this.meetingTimestamp = meetingTimestamp;
         this.agenda = agenda;
         this.notes = notes;
-        this.clubName = clubName;
+        this.clubId = clubId;
         this.oibs = oibs;
     }
 
@@ -31,8 +31,8 @@ public class AddMeetingDTO {
         return notes;
     }
 
-    public String getClubName() {
-        return clubName;
+    public Long getClubId() {
+        return clubId;
     }
 
     public Set<String> getOibs() {

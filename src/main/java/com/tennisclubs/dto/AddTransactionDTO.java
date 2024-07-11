@@ -9,17 +9,17 @@ public class AddTransactionDTO {
     private String name;
     private String surname;
     private String oib;
-    private String clubName;
+    private Long clubId;
     private LocalDateTime transactionTimestamp;
     private Double price;
     private PaymentMethodEnum paymentMethod;
     private String description;
 
-    public AddTransactionDTO(String name, String surname, String oib, String clubName, LocalDateTime transactionTimestamp, Double price, PaymentMethodEnum paymentMethod, String description) {
+    public AddTransactionDTO(String name, String surname, String oib, Long clubId, LocalDateTime transactionTimestamp, Double price, PaymentMethodEnum paymentMethod, String description) {
         this.name = name;
         this.surname = surname;
         this.oib = oib;
-        this.clubName = clubName;
+        this.clubId = clubId;
         this.transactionTimestamp = transactionTimestamp;
         this.price = price;
         this.paymentMethod = paymentMethod;
@@ -35,8 +35,8 @@ public class AddTransactionDTO {
         return oib;
     }
 
-    public String getClubName() {
-        return clubName;
+    public Long getClubId() {
+        return clubId;
     }
 
     public LocalDateTime getTransactionTimestamp() {

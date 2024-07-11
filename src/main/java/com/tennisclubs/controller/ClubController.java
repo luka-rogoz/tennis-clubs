@@ -131,6 +131,11 @@ public class ClubController {
         return clubService.addNewCourt(dto, clubId);
     }
 
+    @GetMapping("/{clubId}/courts/{courtId}")
+    public GetCourtDTO seeCourtInfo(@PathVariable("courtId") Long courtId, @PathVariable("clubId") Long clubId) {
+        return clubService.seeCourtInfo(courtId, clubId);
+    }
+
     @PutMapping("/{clubId}/courts/{courtId}")
     public ResponseEntity<Object> changeCourtInfo(@PathVariable("courtId") Long courtId, @ModelAttribute AddCourtDTO dto, @PathVariable("clubId") Long clubId) {
         return clubService.changeCourtInfo(courtId, dto, clubId);

@@ -21,7 +21,6 @@ function TrainingManager() {
     const [duration, setDuration] = useState("");
     const [description, setDescription] = useState("");
     const [notes, setNotes] = useState("");
-    const [coach, setCoach] = useState("");
     const [oibs, setOibs] = useState(['']);
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
@@ -42,7 +41,7 @@ function TrainingManager() {
         const requiredFields =[
             trainingTimestamp,
             description,
-            oibs, coach
+            oibs
         ];
 
         if (requiredFields.some((field) => field === null || field === "")) {
@@ -80,7 +79,7 @@ function TrainingManager() {
             formData.append("trainingTimestamp", trainingTimestamp);
             formData.append("description", description);
             formData.append("notes", notes);
-            formData.append("coach", coach);
+            if (coachId != undefined) formData.append("coachId", coachId);
             formData.append("duration", duration);
             oibs.forEach((oib, index) => {
                 formData.append("players", oib);
@@ -112,7 +111,6 @@ function TrainingManager() {
         setTrainingTimestamp("");
         setDescription("");
         setDuration("");
-        setCoach("");
         setNotes("");
         setOibs(['']);
     }
@@ -131,9 +129,7 @@ function TrainingManager() {
         newOibs[index] = event.target.value;
         setOibs(newOibs);
     };
-    const handleCoachChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setCoach(e.target.value);
+
     const handleDurationChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setDuration(e.target.value);
@@ -203,16 +199,6 @@ function TrainingManager() {
                             placeholder="Upišite trajanje treninga"
                             onChange={handleDurationChange}
                             value={duration}
-                            className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="coach">
-                        <Form.Label className="label">Oib trenera</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite oib trenera koji vodi trening"
-                            onChange={handleCoachChange}
-                            value={coach}
                             className="control"
                         />
                     </Form.Group>

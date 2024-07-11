@@ -32,12 +32,12 @@ public class DoubleService {
         return pairRepository.findAll().stream().
                 map(pair -> new GetDoubleDTO(pair.getPairId(), pair.getPlayer1().getOib(), pair.getPlayer1().getName(),
                         pair.getPlayer1().getSurname(), pair.getPlayer2().getOib(), pair.getPlayer2().getName(),
-                        pair.getPlayer2().getSurname(), pair.getRank())).toList();
+                        pair.getPlayer2().getSurname(), pair.getRank(), pair.getDateOfTermination())).toList();
     }
 
     public ResponseEntity<Object> addNewDouble(AddDoubleDTO dto) {
         Pair newDouble = new Pair(playerRepository.findByOib(dto.getPlayer1oib()).orElseThrow(),
-                playerRepository.findByOib(dto.getPlayer2oib()).orElseThrow(), dto.getRank());
+                playerRepository.findByOib(dto.getPlayer2oib()).orElseThrow(), dto.getRank(), dto.getDateOfTermination());
         pairRepository.save(newDouble);
         return ResponseEntity.ok().header(HttpHeaders.LOCATION, "/doubles/" + newDouble.getPairId()).body("Double added successfully!");
     }
@@ -46,7 +46,7 @@ public class DoubleService {
         Pair pair = pairRepository.findByPairId(pairId).orElseThrow();
         return new GetDoubleDTO(pair.getPairId(), pair.getPlayer1().getOib(), pair.getPlayer1().getName(),
                 pair.getPlayer1().getSurname(), pair.getPlayer2().getOib(), pair.getPlayer2().getName(),
-                pair.getPlayer2().getSurname(), pair.getRank());
+                pair.getPlayer2().getSurname(), pair.getRank(), pair.getDateOfTermination());
     }
 
     public ResponseEntity<Object> changeDoubleInfo(Long pairId, AddDoubleDTO dto) {

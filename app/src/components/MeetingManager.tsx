@@ -17,7 +17,6 @@ function TransactionManager() {
     const { clubId } = useParams<{ clubId: string }>();
     const [meetings, setMeetings] = useState<Meeting[]>([]);
     const [meetingTimestamp, setMeetingTimestamp] = useState("");
-    const [clubName, setClubName] = useState("");
     const [agenda, setAgenda] = useState("");
     const [notes, setNotes] = useState("");
     const [oibs, setOibs] = useState(['']);
@@ -39,7 +38,6 @@ function TransactionManager() {
 
         const requiredFields =[
             meetingTimestamp,
-            clubName,
             agenda,
             oibs,
         ];
@@ -78,7 +76,7 @@ function TransactionManager() {
             formData.append("meetingTimestamp", meetingTimestamp);
             formData.append("agenda", agenda);
             formData.append("notes", notes);
-            formData.append("clubName", clubName);
+            if (clubId != undefined) formData.append("clubId", clubId);
             oibs.forEach((oib, index) => {
                 formData.append(`oibs`, oib);
             });
@@ -110,7 +108,6 @@ function TransactionManager() {
         setAgenda("");
         setNotes("");
         setOibs(['']);
-        setClubName("");
     }
 
     const handleMeetingTimestampChange = (e: {
@@ -127,9 +124,6 @@ function TransactionManager() {
         newOibs[index] = event.target.value;
         setOibs(newOibs);
     };
-    const handleClubNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setClubName(e.target.value);
 
     document.title = "Sastanci";
     return (
@@ -186,16 +180,6 @@ function TransactionManager() {
                             placeholder="Upišite bilješke sa sastanka"
                             onChange={handleNotesChange}
                             value={notes}
-                            className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="clubName">
-                        <Form.Label className="label">Ime kluba</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite ime kluba u kojem se održava sastanak"
-                            onChange={handleClubNameChange}
-                            value={clubName}
                             className="control"
                         />
                     </Form.Group>

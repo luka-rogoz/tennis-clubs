@@ -27,7 +27,6 @@ function MatchManager() {
     const [opponent1, setOpponent1] = useState("");
     const [opponent2, setOpponent2] = useState("");
     const [courtName, setCourtName] = useState("");
-    const [tournamentName, setTournamentName] = useState("");
     const [categoryType, setCategoryType] = useState("");
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
@@ -49,7 +48,6 @@ function MatchManager() {
             opponent1,
             opponent2,
             courtName,
-            tournamentName,
             categoryType
         ];
 
@@ -89,7 +87,7 @@ function MatchManager() {
             formData.append("opponent1", opponent1);
             formData.append("opponent2", opponent2);
             formData.append("courtName", courtName);
-            formData.append("tournamentName", tournamentName);
+            if (tournamentId != undefined) formData.append("tournamentId", tournamentId);
             formData.append("categoryType", categoryType);
 
             const options = {
@@ -123,7 +121,6 @@ function MatchManager() {
         setMatchResult("");
         setOpponent1("");
         setOpponent2("");
-        setTournamentName("");
     }
 
     const handleDurationChange = (e: {
@@ -141,9 +138,6 @@ function MatchManager() {
     const handleOpponent2Change = (e: {
         target: { value: SetStateAction<string> };
     }) => setOpponent2(e.target.value);
-    const handleTournamentNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setTournamentName(e.target.value);
     const handleMatchTimestampChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setMatchTimestamp(e.target.value);
@@ -179,16 +173,6 @@ function MatchManager() {
                 )}
                 <h2>Dodajte novi meč:</h2>
                 <Form onSubmit={handleSubmit}>
-                    <Form.Group controlId="name">
-                        <Form.Label className="label">Ime turnira</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite jedinstveno ime turnira"
-                            onChange={handleTournamentNameChange}
-                            value={tournamentName}
-                            className="control"
-                        />
-                    </Form.Group>
                     <Form.Group controlId="categoryType">
                         <Form.Label className="label">Tip kategorije</Form.Label>
                         <div className="form-check form-check-inline" style={{margin: 5}}>

@@ -1,5 +1,7 @@
 package com.tennisclubs.dto;
 
+import java.time.LocalDate;
+
 public class AddDoubleDTO {
     private String player1oib;
     private String player1name;
@@ -8,8 +10,9 @@ public class AddDoubleDTO {
     private String player2name;
     private String player2surname;
     private Integer rank;
+    private LocalDate dateOfTermination;
 
-    public AddDoubleDTO(String player1oib, String player1name, String player1surname, String player2oib, String player2name, String player2surname, Integer rank) {
+    public AddDoubleDTO(String player1oib, String player1name, String player1surname, String player2oib, String player2name, String player2surname, Integer rank, LocalDate dateOfTermination) {
         this.player1oib = player1oib;
         this.player1name = player1name;
         this.player1surname = player1surname;
@@ -17,6 +20,7 @@ public class AddDoubleDTO {
         this.player2name = player2name;
         this.player2surname = player2surname;
         this.rank = rank;
+        this.dateOfTermination = dateOfTermination;
     }
 
     public String getPlayer1oib() {
@@ -46,4 +50,6 @@ public class AddDoubleDTO {
     public Integer getRank() {
         return rank;
     }
+
+    public LocalDate getDateOfTermination() { return dateOfTermination; }
 }

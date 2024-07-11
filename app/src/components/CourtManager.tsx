@@ -1,6 +1,6 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {useParams} from "react-router-dom";
+import {Link, useParams} from "react-router-dom";
 import './ClubManager.css'
 import {Button, Form} from "react-bootstrap";
 
@@ -14,7 +14,6 @@ interface Court {
 function CourtManager() {
     const { clubId } = useParams<{ clubId: string }>();
     const [courts, setCourts] = useState<Court[]>([]);
-    const [clubName, setClubName] = useState("");
     const [surface, setSurface] = useState("");
     const [name, setName] = useState("");
     const [formError, setFormError] = useState("");
@@ -30,7 +29,6 @@ function CourtManager() {
         e.preventDefault();
 
         const requiredFields =[
-            clubName,
             surface,
             name
         ];
@@ -50,7 +48,7 @@ function CourtManager() {
 
         try {
             const formData = new FormData();
-            formData.append("clubName", clubName);
+            if (clubId != undefined) formData.append("clubId", clubId);
             formData.append("surface", surface);
             formData.append("name", name);
 
@@ -79,12 +77,8 @@ function CourtManager() {
     const resetFormFields = () => {
         setName("");
         setSurface("");
-        setClubName("");
     }
 
-    const handleClubNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setClubName(e.target.value);
     const handleNameChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setName(e.target.value);
@@ -104,10 +98,10 @@ function CourtManager() {
                         <tbody>
                         {courts.map(court => (
                             <tr key={court.courtId}>
-                                <td>{court.name}</td>
-                                {court.surface === "CLAY" && <td>Zemlja</td>}
-                                {court.surface === "GRASS" && <td>Trava</td>}
-                                {court.surface === "HARD" && <td>Tvrda</td>}
+                                <Link to={`/clubs/${clubId}/courts/${court.courtId}`}>
+                                    <td>{court.name}</td>
+                                    <td>{court.clubName}</td>
+                                </Link>
                             </tr>
                         ))}
                         </tbody>
@@ -162,16 +156,6 @@ function CourtManager() {
                             />
                             <label>Tvrda</label>
                         </div>
-                    </Form.Group>
-                    <Form.Group controlId="clubName">
-                        <Form.Label className="label">Ime kluba</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite ime kluba za koji se nabavlja oprema"
-                            onChange={handleClubNameChange}
-                            value={clubName}
-                            className="control"
-                        />
                     </Form.Group>
                     <Button variant="success" type="submit">
                         Dodaj teren

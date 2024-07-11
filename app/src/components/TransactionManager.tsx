@@ -22,7 +22,6 @@ function TransactionManager() {
     const [name, setName] = useState("");
     const [surname, setSurname] = useState("");
     const [oib, setOib] = useState("");
-    const [clubName, setClubName] = useState("");
     const [transactionTimestamp, setTransactionTimestamp] = useState("");
     const [price, setPrice] = useState("");
     const [paymentMethod, setPaymentMethod] = useState("");
@@ -43,7 +42,6 @@ function TransactionManager() {
             name,
             surname,
             oib,
-            clubName,
             transactionTimestamp,
             price,
             paymentMethod,
@@ -96,7 +94,7 @@ function TransactionManager() {
             formData.append("name", name);
             formData.append("surname", surname);
             formData.append("oib", oib);
-            formData.append("clubName", clubName);
+            if (clubId != undefined) formData.append("clubId", clubId);
             formData.append("transactionTimestamp", transactionTimestamp);
             formData.append("price", price);
             formData.append("paymentMethod", paymentMethod);
@@ -128,7 +126,6 @@ function TransactionManager() {
         setName("");
         setSurname("");
         setOib("");
-        setClubName("");
         setTransactionTimestamp("");
         setPrice("");
         setPaymentMethod("");
@@ -144,9 +141,6 @@ function TransactionManager() {
     const handleOibChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setOib(e.target.value);
-    const handleClubNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setClubName(e.target.value);
     const handleTransactionTimestampChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setTransactionTimestamp(e.target.value);
@@ -188,16 +182,6 @@ function TransactionManager() {
                 )}
                 <h2>Dodajte novu transakciju:</h2>
                 <Form onSubmit={handleSubmit}>
-                    <Form.Group controlId="clubName">
-                        <Form.Label className="label">Ime kluba</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite ime kluba koji izvršava transakciju"
-                            onChange={handleClubNameChange}
-                            value={clubName}
-                            className="control"
-                        />
-                    </Form.Group>
                     <Form.Group controlId="name">
                         <Form.Label className="label">Ime osobe</Form.Label>
                         <Form.Control

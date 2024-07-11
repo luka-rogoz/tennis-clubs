@@ -15,7 +15,6 @@ interface Equipment {
 function EquipmentManager() {
     const { clubId } = useParams<{ clubId: string }>();
     const [equipment, setEquipment] = useState<Equipment[]>([]);
-    const [clubName, setClubName] = useState("");
     const [quantity, setQuantity] = useState("");
     const [name, setName] = useState("");
     const [price, setPrice] = useState("");
@@ -32,7 +31,6 @@ function EquipmentManager() {
         e.preventDefault();
 
         const requiredFields =[
-            clubName,
             quantity,
             price,
             name
@@ -81,7 +79,7 @@ function EquipmentManager() {
 
         try {
             const formData = new FormData();
-            formData.append("clubName", clubName);
+            if (clubId != undefined) formData.append("clubId", clubId);
             formData.append("quantity", quantity);
             formData.append("price", price);
             formData.append("name", name);
@@ -112,12 +110,8 @@ function EquipmentManager() {
         setName("");
         setQuantity("");
         setPrice("");
-        setClubName("");
     }
 
-    const handleClubNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setClubName(e.target.value);
     const handleNameChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setName(e.target.value);
@@ -175,16 +169,6 @@ function EquipmentManager() {
                             placeholder="Upišite cijenu opreme u eurima"
                             onChange={handlePriceChange}
                             value={price}
-                            className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="clubName">
-                        <Form.Label className="label">Ime kluba</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite ime kluba za koji se nabavlja oprema"
-                            onChange={handleClubNameChange}
-                            value={clubName}
                             className="control"
                         />
                     </Form.Group>

@@ -13,9 +13,9 @@ public class AddMatchDTO {
     private String opponent1;
     private String opponent2;
     private String courtName;
-    private String tournamentName;
+    private Long tournamentId;
 
-    public AddMatchDTO(LocalDateTime matchTimestamp, String matchResult, String duration, StageEnum stage, String opponent1, String opponent2, String courtName, String tournamentName) {
+    public AddMatchDTO(LocalDateTime matchTimestamp, String matchResult, String duration, StageEnum stage, String opponent1, String opponent2, String courtName, Long tournamentId) {
         this.matchTimestamp = matchTimestamp;
         this.matchResult = matchResult;
         this.duration = duration;
@@ -23,7 +23,7 @@ public class AddMatchDTO {
         this.opponent1 = opponent1;
         this.opponent2 = opponent2;
         this.courtName = courtName;
-        this.tournamentName = tournamentName;
+        this.tournamentId = tournamentId;
     }
 
     public LocalDateTime getMatchTimestamp() {
@@ -54,7 +54,7 @@ public class AddMatchDTO {
         return courtName;
     }
 
-    public String getTournamentName() {
-        return tournamentName;
+    public Long getTournamentId() {
+        return tournamentId;
     }
 }

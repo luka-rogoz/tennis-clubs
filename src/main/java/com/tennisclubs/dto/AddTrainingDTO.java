@@ -8,15 +8,15 @@ public class AddTrainingDTO {
     private String duration;
     private String description;
     private String notes;
-    private String coach;
+    private Long coachId;
     private Set<String> players;
 
-    public AddTrainingDTO(LocalDateTime trainingTimestamp, String duration, String description, String notes, String coach, Set<String> players) {
+    public AddTrainingDTO(LocalDateTime trainingTimestamp, String duration, String description, String notes, Long coachId, Set<String> players) {
         this.trainingTimestamp = trainingTimestamp;
         this.duration = duration;
         this.description = description;
         this.notes = notes;
-        this.coach = coach;
+        this.coachId = coachId;
         this.players = players;
     }
 
@@ -36,8 +36,8 @@ public class AddTrainingDTO {
         return notes;
     }
 
-    public String getCoach() {
-        return coach;
+    public Long getCoachId() {
+        return coachId;
     }
 
     public Set<String> getPlayers() {

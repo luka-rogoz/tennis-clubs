@@ -124,7 +124,7 @@ public class ClubService {
 
     public ResponseEntity<Object> addNewTransaction(AddTransactionDTO dto, Long clubId) {
         Transaction newTransaction = new Transaction(personRepository.findByOib(dto.getOib()).orElseThrow(),
-                clubRepository.findByName(dto.getClubName()).orElseThrow(), dto.getTransactionTimestamp(), dto.getPrice(),
+                clubRepository.findByClubId(dto.getClubId()).orElseThrow(), dto.getTransactionTimestamp(), dto.getPrice(),
                 dto.getPaymentMethod(), dto.getDescription());
         newTransaction = transactionRepository.save(newTransaction);
         return ResponseEntity.ok().header(HttpHeaders.LOCATION, "/clubs/" + clubId + "/transactions/" + newTransaction.getTransactionId()).body("Transaction added successfully!");
@@ -145,7 +145,7 @@ public class ClubService {
 
         Transaction changedTransaction = transactionRepository.findByTransactionId(transactionId).orElseThrow();
         changedTransaction.setPerson(personRepository.findByOib(dto.getOib()).orElseThrow());
-        changedTransaction.setClub(clubRepository.findByName(dto.getClubName()).orElseThrow());
+        changedTransaction.setClub(clubRepository.findByClubId(dto.getClubId()).orElseThrow());
         changedTransaction.setTransactionTimestamp(dto.getTransactionTimestamp());
         changedTransaction.setPrice(dto.getPrice());
         changedTransaction.setPaymentMethod(dto.getPaymentMethod());
@@ -182,8 +182,8 @@ public class ClubService {
 
     public GetEquipmentDTO seeEquipmentInfo(Long equipmentId, Long clubId) {
         Owns owns = ownsRepository.findByOwnsId(new OwnsPK(equipmentId, clubId)).orElseThrow();
-        return new GetEquipmentDTO(owns.getOwnsId().getEquipmentId(), owns.getClub().getName(), owns.getQuantity(), owns.getEquipment().getName(),
-                owns.getEquipment().getPrice());
+        return new GetEquipmentDTO(owns.getEquipment().getEquipmentId(), owns.getClub().getName(),
+                owns.getQuantity(), owns.getEquipment().getName(), owns.getEquipment().getPrice());
     }
 
     public ResponseEntity<Object> changeEquipmentInfo(Long equipmentId, AddEquipmentDTO dto, Long clubId) {
@@ -191,14 +191,16 @@ public class ClubService {
             throw new NoSuchElementException();
         }
 
-        Equipment equipment;
-        if (equipmentRepository.findByName(dto.getName()).isEmpty()) {
-            equipment = equipmentRepository.save(new Equipment(dto.getName(), dto.getPrice()));
-        } else {
+        Equipment equipment = new Equipment(dto.getName(), dto.getPrice());
+        if (equipmentRepository.findByEquipmentId(equipmentId).isPresent()) {
             equipment = equipmentRepository.findByName(dto.getName()).orElseThrow();
+            equipment.setName(dto.getName());
+            equipment.setPrice(dto.getPrice());
         }
+        equipmentRepository.save(equipment);
 
         Owns changedEquipment = ownsRepository.findByOwnsId(new OwnsPK(equipmentId, clubId)).orElseThrow();
+        ownsRepository.delete(ownsRepository.findByOwnsId(new OwnsPK(equipmentId, clubId)).orElseThrow());
         changedEquipment.setOwnsId(new OwnsPK(equipment.getEquipmentId(), clubId));
         changedEquipment.setEquipment(equipment);
         changedEquipment.setClub(clubRepository.findByClubId(clubId).orElseThrow());
@@ -228,7 +230,7 @@ public class ClubService {
 
     public ResponseEntity<Object> addNewMeeting(AddMeetingDTO dto, Long clubId) {
         Meeting newMeeting = new Meeting(dto.getMeetingTimestamp(), dto.getAgenda(), dto.getNotes(),
-                clubRepository.findByName(dto.getClubName()).orElseThrow());
+                clubRepository.findByClubId(dto.getClubId()).orElseThrow());
         newMeeting.setAttendees(dto.getOibs().stream().map(oib -> personRepository.findByOib(oib).orElseThrow()).
                 collect(Collectors.toSet()));
         meetingRepository.save(newMeeting);
@@ -248,7 +250,7 @@ public class ClubService {
         }
 
         Meeting changedMeeting = meetingRepository.findByMeetingId(meetingId).orElseThrow();
-        changedMeeting.setClub(clubRepository.findByName(dto.getClubName()).orElseThrow());
+        changedMeeting.setClub(clubRepository.findByClubId(dto.getClubId()).orElseThrow());
         changedMeeting.setMeetingTimestamp(dto.getMeetingTimestamp());
         changedMeeting.setAgenda(dto.getAgenda());
         changedMeeting.setAttendees(dto.getOibs().stream().map(oib -> personRepository.findByOib(oib).orElseThrow()).
@@ -274,10 +276,15 @@ public class ClubService {
     }
 
     public ResponseEntity<Object> addNewCourt(AddCourtDTO dto, Long clubId) {
-        Court newCourt = new Court(dto.getName(), clubRepository.findByName(dto.getClubName()).orElseThrow(),
+        Court newCourt = new Court(dto.getName(), clubRepository.findByClubId(dto.getClubId()).orElseThrow(),
                 dto.getSurface());
         courtRepository.save(newCourt);
         return ResponseEntity.ok().header(HttpHeaders.LOCATION, "/clubs/" + clubId + "/courts/" + newCourt.getCourtId()).body("Court added successfully!");
+    }
+
+    public GetCourtDTO seeCourtInfo(Long courtId, Long clubId) {
+        Court court = courtRepository.findByCourtId(courtId).orElseThrow();
+        return new GetCourtDTO(court.getCourtId(), court.getName(), court.getClub().getName(), court.getSurface());
     }
 
     public ResponseEntity<Object> changeCourtInfo(Long courtId, AddCourtDTO dto, Long clubId) {
@@ -286,7 +293,7 @@ public class ClubService {
         }
 
         Court changedCourt = courtRepository.findByCourtId(courtId).orElseThrow();
-        changedCourt.setClub(clubRepository.findByName(dto.getClubName()).orElseThrow());
+        changedCourt.setClub(clubRepository.findByClubId(dto.getClubId()).orElseThrow());
         changedCourt.setName(dto.getName());
         changedCourt.setSurface(dto.getSurface());
         courtRepository.save(changedCourt);

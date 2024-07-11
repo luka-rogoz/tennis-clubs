@@ -142,7 +142,7 @@ public class CoachService {
     public ResponseEntity<Object> addNewTrainingSession(AddTrainingDTO dto, Long coachId) {
         Training newTraining = new Training(dto.getTrainingTimestamp(), dto.getDuration(), dto.getDescription(),
                 dto.getNotes(), dto.getPlayers().stream().map(oib -> playerRepository.findByOib(oib).orElseThrow())
-                .collect(Collectors.toSet()), coachRepository.findByOib(dto.getCoach()).orElseThrow());
+                .collect(Collectors.toSet()), coachRepository.findByPersonId(dto.getCoachId()).orElseThrow());
         trainingRepository.save(newTraining);
         return ResponseEntity.ok().header(HttpHeaders.LOCATION, "/coaches/" + coachId + "/training_sessions/" + newTraining.getTrainingId()).body("Training added successfully!");
     }
@@ -161,7 +161,7 @@ public class CoachService {
         }
 
         Training changedTraining = trainingRepository.findByTrainingId(trainingId).orElseThrow();
-        changedTraining.setCoach(coachRepository.findByOib(dto.getCoach()).orElseThrow());
+        changedTraining.setCoach(coachRepository.findByPersonId(dto.getCoachId()).orElseThrow());
         changedTraining.setTrainingTimestamp(dto.getTrainingTimestamp());
         changedTraining.setPlayers(dto.getPlayers().stream().map(oib -> playerRepository.findByOib(oib).orElseThrow())
                 .collect(Collectors.toSet()));
