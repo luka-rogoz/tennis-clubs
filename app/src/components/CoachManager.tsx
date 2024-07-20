@@ -1,7 +1,6 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link} from "react-router-dom";
-import './ClubManager.css'
+import './Manager.css'
 import {Button, Form} from "react-bootstrap";
 
 interface Coach {
@@ -48,6 +47,14 @@ function CoachManager() {
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
 
+    const [filterName, setFilterName] = useState("");
+    const [filterSurname, setFilterSurname] = useState("");
+    const [filterYearsOfExperience, setFilterYearsOfExperience] = useState("");
+    const [filterPlaceName, setFilterPlaceName] = useState("");
+
+    const [sortCriteria, setSortCriteria] = useState<keyof Coach>("surname");
+    const [sortOrder, setSortOrder] = useState<string>("asc");
+
     useEffect(() => {
         axios.get('/coaches')
             .then(response => setCoaches(response.data))
@@ -59,6 +66,7 @@ function CoachManager() {
 
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             oib,
@@ -192,6 +200,47 @@ function CoachManager() {
         target: { value: SetStateAction<string> };
     }) => setFrom(e.target.value);
 
+    const handleFilterNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterName(e.target.value);
+    const handleFilterSurnameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterSurname(e.target.value);
+    const handleFilterYearsOfExperienceChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterYearsOfExperience(e.target.value);
+    const handleFilterPlaceNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterPlaceName(e.target.value);
+
+    const handleSortChange = (criteria: keyof Coach) => {
+        setSortCriteria(criteria);
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    };
+
+    const sortCoaches = (coaches: Coach[], criteria: keyof Coach, order: string) => {
+        return coaches.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return order === "asc" ? -1 : 1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const filteredCoaches = coaches.filter(coach => {
+        return (
+            (filterName === "" || coach.name.toLowerCase().includes(filterName.toLowerCase())) &&
+            (filterSurname === "" || coach.surname.toString().includes(filterSurname)) &&
+            (filterYearsOfExperience === "" || coach.yearsOfExperience.toString().includes(filterYearsOfExperience)) &&
+            (filterPlaceName === "" || coach.placeName.toLowerCase().includes(filterPlaceName.toLowerCase()))
+        );
+    });
+
+    const sortedCoaches = sortCoaches(filteredCoaches, sortCriteria, sortOrder);
+
     document.title = "Treneri";
     return (
         <div>
@@ -199,18 +248,84 @@ function CoachManager() {
                 <h1>Treneri</h1>
                 <p>Ovdje možete pregledavati sve trenere koji se nalaze u bazi, unijeti nove trenere te
                     ažurirati podatke za postojeće.</p>
+                <hr/>
+                <h2>Filtriraj trenere:</h2>
+                <Form>
+                    <Form.Group controlId="filterName">
+                        <Form.Label className="label">Filtriraj po imenu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime trenera"
+                            onChange={handleFilterNameChange}
+                            value={filterName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterFoundationYear">
+                        <Form.Label className="label">Filtriraj po prezimenu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite prezime trenera"
+                            onChange={handleFilterSurnameChange}
+                            value={filterSurname}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterBudget">
+                        <Form.Label className="label">Filtriraj po godinama iskustva</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite broj godina iskustva"
+                            onChange={handleFilterYearsOfExperienceChange}
+                            value={filterYearsOfExperience}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterPlaceName">
+                        <Form.Label className="label">Filtriraj po imenu mjesta</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime mjesta"
+                            onChange={handleFilterPlaceNameChange}
+                            value={filterPlaceName}
+                            className="control"
+                        />
+                    </Form.Group>
+                </Form>
+                <Form.Group controlId="sortCriteria">
+                    <Form.Label className="label">Sortiraj po:</Form.Label>
+                    <Form.Control
+                        as="select"
+                        value={sortCriteria}
+                        onChange={(e) => handleSortChange(e.target.value as keyof Coach)}
+                        className="control"
+                    >
+                        <option value="name">Imenu</option>
+                        <option value="surname">Prezimenu</option>
+                        <option value="yearsOfExperience">Godinama iskustva</option>
+                        <option value="placeName">Imenu mjesta</option>
+                    </Form.Control>
+                    <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    >
+                        Poredaj {sortOrder === "asc" ? "silazno" : "uzlazno"}
+                    </Button>
+                </Form.Group>
+                <div className="empty"></div>
+                <hr/>
                 <h2>Popis trenera:</h2>
-                {coaches.length === 0 ? (
+                {sortedCoaches.length === 0 ? (
                     <p style={{fontStyle: 'italic'}}>Trenutno nema trenera u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
-                        {coaches.map(coach => (
-                            <tr key={coach.coachId}>
-                                <Link to={`/coaches/${coach.coachId}`}>
-                                    <td>{coach.name} {coach.surname}</td>
-                                    <td>{coach.clubName}</td>
-                                </Link>
+                        {sortedCoaches.map(coach => (
+                            <tr key={coach.coachId} style={{cursor: 'pointer'}}
+                                onClick={() => window.location.href = `/coaches/${coach.coachId}`}>
+                                <td>{coach.name} {coach.surname}</td>
+                                <td>{coach.clubName}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -221,6 +336,8 @@ function CoachManager() {
                         {formError}
                     </div>
                 )}
+                <div className="empty"></div>
+                <hr/>
                 <h2>Dodajte novog trenera:</h2>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group controlId="name">
@@ -326,14 +443,19 @@ function CoachManager() {
                     </Form.Group>
                     <Form.Group controlId="clubName">
                         <Form.Label className="label">Ime kluba</Form.Label>
-                        <select id="club-select" value={clubName ?? ''} onChange={handleClubNameChange}>
+                        <Form.Control
+                            as="select"
+                            value={clubName ?? ''}
+                            onChange={handleClubNameChange}
+                            className="control"
+                        >
                             <option value="" disabled>Izaberi klub</option>
                             {clubs.map(club => (
                                 <option key={club.clubId} value={club.name}>
                                     {club.name}
                                 </option>
                             ))}
-                        </select>
+                        </Form.Control>
                     </Form.Group>
                     <Form.Group controlId="dateFrom">
                         <Form.Label className="label">Datum prelaska u klub</Form.Label>
@@ -346,7 +468,7 @@ function CoachManager() {
                     <Button variant="success" type="submit">
                         Dodaj trenera
                     </Button>
-                    <Button variant="secondary" className="ms-2" onClick={resetFormFields}>
+                    <Button variant="secondary" className="button-space" onClick={resetFormFields}>
                         Odustani
                     </Button>
                 </Form>

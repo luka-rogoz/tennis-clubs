@@ -42,9 +42,9 @@ public class PlayerService {
                         player.getClubsPlayedAt().stream().
                                 filter(r -> r.getToDate() == null).map(Represents::getClub).
                                 toList().getLast().getName(), player.getClubsPlayedAt().stream()
-                        .filter(r -> r.getToDate() != null).map(r -> r.getClub().getName() + ": " + r.getFromDate().getDayOfMonth() + ". " + r.getFromDate().getMonthValue() +
-                        ". " + r.getFromDate().getYear() + ". - " + r.getToDate().getDayOfMonth() + ". " + r.getToDate().getMonthValue()
-                        + ". " + r.getToDate().getYear() + ".").collect(Collectors.toSet()))).toList();
+                        .filter(r -> r.getToDate() != null).map(r -> r.getClub().getName() + ": " + r.getFromDate().getDayOfMonth() + "." + r.getFromDate().getMonthValue() +
+                        "." + r.getFromDate().getYear() + ". - " + r.getToDate().getDayOfMonth() + "." + r.getToDate().getMonthValue()
+                        + "." + r.getToDate().getYear() + ".").collect(Collectors.toSet()))).toList();
     }
 
     public ResponseEntity<Object> addNewPlayer(AddPlayerDTO dto) {
@@ -69,9 +69,9 @@ public class PlayerService {
         Club club = player.getClubsPlayedAt().stream().filter(r -> r.getToDate() == null).
                 map(Represents::getClub).toList().getLast();
         Set<String> previousClubs = player.getClubsPlayedAt().stream().filter(r -> r.getToDate() != null)
-                .map(r -> r.getClub().getName() + ": " + r.getFromDate().getDayOfMonth() + ". " + r.getFromDate().getMonthValue() +
-                        ". " + r.getFromDate().getYear() + ". - " + r.getToDate().getDayOfMonth() + ". " + r.getToDate().getMonthValue()
-                        + ". " + r.getToDate().getYear() + ".").collect(Collectors.toSet());
+                .map(r -> r.getClub().getName() + ": " + r.getFromDate().getDayOfMonth() + "." + r.getFromDate().getMonthValue() +
+                        "." + r.getFromDate().getYear() + ". - " + r.getToDate().getDayOfMonth() + "." + r.getToDate().getMonthValue()
+                        + "." + r.getToDate().getYear() + ".").collect(Collectors.toSet());
         return new GetPlayerDTO(player.getPersonId(), player.getOib(), player.getName(), player.getSurname(), player.getDateOfBirth(),
                 player.getSex(), player.getPlace().getZipCode(), player.getPlace().getName(), player.getHeight(),
                 player.getWeight(), player.getPreferredHand(), player.getRank(), player.getInjury(), club.getName(), previousClubs);
@@ -134,11 +134,33 @@ public class PlayerService {
     }
 
     public List<GetMatchDTO> getPlayerMatches(Long playerId) {
-        return Stream.concat(playerRepository.findByPersonId(playerId).orElseThrow().getSinglesMatchesPlayedAsHost().
-                        stream(), playerRepository.findByPersonId(playerId).orElseThrow().getSinglesMatchesPlayedAsGuest().
-                stream()).map(m -> new GetMatchDTO(m.getMatchId(), m.getMatchTimestamp(), m.getMatchResult(),
-                m.getDuration(), m.getStage(), m.getPlayer1().getName() + " " + m.getPlayer1().getSurname()
-        + ", " + m.getPlayer1().getOib(), m.getPlayer2().getName() + " " + m.getPlayer2().getSurname() + ", "
-        + m.getPlayer2().getOib(), m.getCourt().getName(), m.getTournament().getName(), m.getTournament().getCategory().getType())).toList();
+        return Stream.concat(
+                playerRepository.findByPersonId(playerId).orElseThrow().getSinglesMatchesPlayedAsHost().stream(),
+                playerRepository.findByPersonId(playerId).orElseThrow().getSinglesMatchesPlayedAsGuest().stream()
+        ).map(m -> {
+            String[] scores = m.getMatchResult().split("-");
+            int hostScore = Integer.parseInt(scores[0]);
+            int guestScore = Integer.parseInt(scores[1]);
+
+            boolean isHost = m.getPlayer1().getPersonId().equals(playerId);
+            boolean playerWon = (isHost && hostScore > guestScore) || (!isHost && guestScore > hostScore);
+
+            return new GetMatchDTO(
+                    m.getMatchId(),
+                    m.getMatchTimestamp(),
+                    m.getMatchResult(),
+                    m.getDuration(),
+                    m.getStage(),
+                    m.getPlayer1().getName() + " " + m.getPlayer1().getSurname() + ", " + m.getPlayer1().getOib(),
+                    m.getPlayer2().getName() + " " + m.getPlayer2().getSurname() + ", " + m.getPlayer2().getOib(),
+                    m.getCourt().getName(),
+                    m.getTournament().getName(),
+                    m.getTournament().getCategory().getType(),
+                    m.getTournament().getCategory().getAgeLimit(),
+                    m.getTournament().getCategory().getSexLimit(),
+                    playerWon ? 1 : 0
+            );
+        }).toList();
     }
+
 }

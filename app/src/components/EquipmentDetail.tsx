@@ -53,6 +53,7 @@ function EquipmentDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             quantity,

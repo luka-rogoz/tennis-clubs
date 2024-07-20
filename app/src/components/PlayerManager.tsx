@@ -1,7 +1,6 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link} from "react-router-dom";
-import './ClubManager.css'
+import './Manager.css'
 import {Button, Form} from "react-bootstrap";
 
 interface Player {
@@ -15,7 +14,7 @@ interface Player {
     placeName: string;
     height: number;
     weight: number;
-    prefferedHand: string;
+    preferredHand: string;
     rank: number;
     injury: string;
     clubName: string;
@@ -49,10 +48,20 @@ function PlayerManager() {
     const [rank, setRank] = useState("");
     const [height, setHeight] = useState("");
     const [weight, setWeight] = useState("");
-    const [prefferedHand, setPrefferedHand] = useState("");
+    const [preferredHand, setPreferredHand] = useState("");
     const [from, setFrom] = useState("");
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
+
+    const [filterName, setFilterName] = useState("");
+    const [filterSurname, setFilterSurname] = useState("");
+    const [filterSex, setFilterSex] = useState<string[]>([]);
+    const [filterRank, setFilterRank] = useState("");
+    const [filterPreferredHand, setFilterPreferredHand] = useState<string[]>([]);
+    const [filterPlaceName, setFilterPlaceName] = useState("");
+
+    const [sortCriteria, setSortCriteria] = useState<keyof Player>("surname");
+    const [sortOrder, setSortOrder] = useState<string>("asc");
 
     useEffect(() => {
         axios.get('/players')
@@ -65,6 +74,7 @@ function PlayerManager() {
 
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             oib,
@@ -127,7 +137,7 @@ function PlayerManager() {
             formData.append("sex", sex);
             formData.append("height", height);
             formData.append("weight", weight);
-            formData.append("prefferedHand", prefferedHand);
+            formData.append("preferredHand", preferredHand);
             formData.append("rank", rank);
             formData.append("injury", injury);
             formData.append("zipCode", zipCode);
@@ -165,7 +175,7 @@ function PlayerManager() {
         setSex("");
         setHeight("");
         setWeight("");
-        setPrefferedHand("");
+        setPreferredHand("");
         setRank("");
         setInjury("");
         setPlaceName("");
@@ -211,6 +221,63 @@ function PlayerManager() {
         target: { value: SetStateAction<string> };
     }) => setFrom(e.target.value);
 
+    const handleFilterNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterName(e.target.value);
+    const handleFilterSurnameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterSurname(e.target.value);
+    const handleFilterRankChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterRank(e.target.value);
+    const handleFilterPlaceNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterPlaceName(e.target.value);
+    const handleFilterSexChange = (value: string) => {
+        setFilterSex(prev =>
+            prev.includes(value)
+                ? prev.filter(sex => sex !== value)
+                : [...prev, value]
+        );
+    };
+    const handleFilterPreferredHandChange = (value: string) => {
+        setFilterPreferredHand(prev =>
+            prev.includes(value)
+                ? prev.filter(preferredHand => preferredHand !== value)
+                : [...prev, value]
+        );
+    };
+
+    const handleSortChange = (criteria: keyof Player) => {
+        setSortCriteria(criteria);
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    };
+
+    const sortPlayers = (players: Player[], criteria: keyof Player, order: string) => {
+        return players.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return order === "asc" ? -1 : 1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const filteredPlayers = players.filter(player => {
+        return (
+            (filterName === "" || player.name.toLowerCase().includes(filterName.toLowerCase())) &&
+            (filterSurname === "" || player.surname.toString().includes(filterSurname)) &&
+            (filterSex.length === 0 || filterSex.includes(player.sex)) &&
+            (filterPreferredHand.length === 0 || filterPreferredHand.includes(player.preferredHand)) &&
+            (filterRank === "" || player.rank.toString().includes(filterRank)) &&
+            (filterPlaceName === "" || player.placeName.toLowerCase().includes(filterPlaceName.toLowerCase()))
+        );
+    });
+
+    const sortedPlayers = sortPlayers(filteredPlayers, sortCriteria, sortOrder);
+
     document.title = "Tenisači";
     return (
         <div>
@@ -218,18 +285,137 @@ function PlayerManager() {
                 <h1>Tenisači</h1>
                 <p>Ovdje možete pregledavati sve tenisače koji se nalaze u bazi, unijeti nove tenisače te
                     ažurirati podatke za postojeće.</p>
+                <hr/>
+                <h2>Filtriraj trenere:</h2>
+                <Form>
+                    <Form.Group controlId="filterName">
+                        <Form.Label className="label">Filtriraj po imenu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime trenera"
+                            onChange={handleFilterNameChange}
+                            value={filterName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterFoundationYear">
+                        <Form.Label className="label">Filtriraj po prezimenu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite prezime trenera"
+                            onChange={handleFilterSurnameChange}
+                            value={filterSurname}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterBudget">
+                        <Form.Label className="label">Filtriraj po rankingu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite rank"
+                            onChange={handleFilterRankChange}
+                            value={filterRank}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterPlaceName">
+                        <Form.Label className="label">Filtriraj po imenu mjesta</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime mjesta"
+                            onChange={handleFilterPlaceNameChange}
+                            value={filterPlaceName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterSex">
+                        <Form.Label className="label">Filtriraj po spolu</Form.Label>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="maleFilter"
+                                name="filterSex"
+                                value="MALE"
+                                checked={filterSex.includes("MALE")}
+                                onChange={() => handleFilterSexChange("MALE")}
+                            />
+                            <label>Muškarci</label>
+                        </div>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="femaleFilter"
+                                name="filterSex"
+                                value="FEMALE"
+                                checked={filterSex.includes("FEMALE")}
+                                onChange={() => handleFilterSexChange("FEMALE")}
+                            />
+                            <label>Žene</label>
+                        </div>
+                    </Form.Group>
+                    <Form.Group controlId="filterPreferredHand">
+                        <Form.Label className="label">Filtriraj po snažnijoj ruci</Form.Label>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="leftFilter"
+                                name="filterPreferredHand"
+                                value="LEFT"
+                                checked={filterPreferredHand.includes("LEFT")}
+                                onChange={() => handleFilterPreferredHandChange("LEFT")}
+                            />
+                            <label>Lijeva</label>
+                        </div>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="rightFilter"
+                                name="filterPreferredHand"
+                                value="RIGHT"
+                                checked={filterPreferredHand.includes("RIGHT")}
+                                onChange={() => handleFilterPreferredHandChange("RIGHT")}
+                            />
+                            <label>Desna</label>
+                        </div>
+                    </Form.Group>
+                </Form>
+                <Form.Group controlId="sortCriteria">
+                    <Form.Label className="label">Sortiraj po:</Form.Label>
+                    <Form.Control
+                        as="select"
+                        value={sortCriteria}
+                        onChange={(e) => handleSortChange(e.target.value as keyof Player)}
+                        className="control"
+                    >
+                        <option value="name">Imenu</option>
+                        <option value="surname">Prezimenu</option>
+                        <option value="dateOfBirth">Datumu rođenja</option>
+                        <option value="rank">Rankingu</option>
+                        <option value="height">Visini</option>
+                        <option value="weight">Težini</option>
+                        <option value="placeName">Imenu mjesta</option>
+                    </Form.Control>
+                    <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    >
+                        Poredaj {sortOrder === "asc" ? "silazno" : "uzlazno"}
+                    </Button>
+                </Form.Group>
+                <div className="empty"></div>
+                <hr/>
                 <h2>Popis tenisača:</h2>
-                {players.length === 0 ? (
+                {sortedPlayers.length === 0 ? (
                     <p style={{fontStyle: 'italic'}}>Trenutno nema tenisača u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
-                        {players.map(player => (
-                            <tr key={player.playerId}>
-                                <Link to={`/players/${player.playerId}`}>
-                                    <td>{player.name} {player.surname}</td>
-                                    <td>{player.clubName}</td>
-                                </Link>
+                        {sortedPlayers.map(player => (
+                            <tr key={player.playerId} style={{cursor: 'pointer'}}
+                                onClick={() => window.location.href = `/players/${player.playerId}`}>
+                                <td>{player.name} {player.surname}</td>
+                                <td>{player.clubName}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -240,6 +426,8 @@ function PlayerManager() {
                         {formError}
                     </div>
                 )}
+                <div className="empty"></div>
+                <hr/>
                 <h2>Dodajte novog tenisača:</h2>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group controlId="name">
@@ -351,7 +539,7 @@ function PlayerManager() {
                                 id="left"
                                 name="prefferedHand"
                                 value="left"
-                                onChange={() => setPrefferedHand("LEFT")}
+                                onChange={() => setPreferredHand("LEFT")}
                             />
                             <label>Lijeva</label>
                         </div>
@@ -361,7 +549,7 @@ function PlayerManager() {
                                 id="right"
                                 name="prefferedHand"
                                 value="right"
-                                onChange={() => setPrefferedHand("RIGHT")}
+                                onChange={() => setPreferredHand("RIGHT")}
                             />
                             <label>Desna</label>
                         </div>
@@ -388,14 +576,19 @@ function PlayerManager() {
                     </Form.Group>
                     <Form.Group controlId="clubName">
                         <Form.Label className="label">Ime kluba</Form.Label>
-                        <select id="club-select" value={clubName ?? ''} onChange={handleClubNameChange}>
+                        <Form.Control
+                            as="select"
+                            value={clubName ?? ''}
+                            onChange={handleClubNameChange}
+                            className="control"
+                        >
                             <option value="" disabled>Izaberi klub</option>
                             {clubs.map(club => (
                                 <option key={club.clubId} value={club.name}>
                                     {club.name}
                                 </option>
                             ))}
-                        </select>
+                        </Form.Control>
                     </Form.Group>
                     <Form.Group controlId="dateFrom">
                         <Form.Label className="label">Datum prelaska u klub</Form.Label>
@@ -408,7 +601,7 @@ function PlayerManager() {
                     <Button variant="success" type="submit">
                         Dodaj tenisača
                     </Button>
-                    <Button variant="secondary" className="ms-2" onClick={resetFormFields}>
+                    <Button variant="secondary" className="button-space" onClick={resetFormFields}>
                         Odustani
                     </Button>
                 </Form>

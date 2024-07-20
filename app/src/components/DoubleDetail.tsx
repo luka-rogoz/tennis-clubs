@@ -16,12 +16,31 @@ interface Pair {
     dateOfTermination: string;
 }
 
+interface Player {
+    playerId: number;
+    oib: string;
+    name: string;
+    surname: string;
+    dateOfBirth: string;
+    sex: string;
+    zipCode: number;
+    placeName: string;
+    height: number;
+    weight: number;
+    prefferedHand: string;
+    rank: number;
+    injury: string;
+    clubName: string;
+    from: string;
+}
+
 function DoubleDetail() {
     const { pairId } = useParams<{ pairId: string }>();
     const [pair, setPair] = useState<Pair>();
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
+    const [players, setPlayers] = useState<Player[]>([]);
     const [player1oib, setPlayer1oib] = useState("");
     const [player1name, setPlayer1name] = useState("");
     const [player1surname, setPlayer1surname] = useState("");
@@ -37,7 +56,10 @@ function DoubleDetail() {
         axios.get(`/doubles/${pairId}`)
             .then(response => setPair(response.data))
             .catch(error => console.error("Error fetching pair: ", error));
-    }, [pairId])
+        axios.get('/players')
+            .then(response => setPlayers(response.data))
+            .catch(error => console.error("Error fetching players: ", error));
+    }, [pairId, players])
 
     const handleDeleteClick = async () => {
         try {
@@ -62,6 +84,7 @@ function DoubleDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const oibRegex = /^\d{11}$/;
         if (!oibRegex.test(player1oib) || !oibRegex.test(player2oib)) {
@@ -110,24 +133,22 @@ function DoubleDetail() {
         }
     }
 
-    const handlePlayer1oibChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer1oib(e.target.value);
-    const handlePlayer1nameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer1name(e.target.value);
-    const handlePlayer1surnameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer1surname(e.target.value);
-    const handlePlayer2oibChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer2oib(e.target.value);
-    const handlePlayer2nameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer2name(e.target.value);
-    const handlePlayer2surnameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer2surname(e.target.value);
+    const handlePlayer1Change = (event: { target: { value: string; }; }) => {
+        const selectedPlayer = players.find(player => player.oib === event.target.value);
+        if (selectedPlayer) {
+            setPlayer1oib(selectedPlayer.oib);
+            setPlayer1name(selectedPlayer.name);
+            setPlayer1surname(selectedPlayer.surname);
+        }
+    };
+    const handlePlayer2Change = (event: { target: { value: string; }; }) => {
+        const selectedPlayer = players.find(player => player.oib === event.target.value);
+        if (selectedPlayer) {
+            setPlayer2oib(selectedPlayer.oib);
+            setPlayer2name(selectedPlayer.name);
+            setPlayer2surname(selectedPlayer.surname);
+        }
+    };
     const handleRankChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setRank(e.target.value);
@@ -185,65 +206,39 @@ function DoubleDetail() {
                 )}
                 {showChangeButton && (
                     <Form onSubmit={handleChangeClick}>
-                        <Form.Group controlId="player1oib">
-                            <Form.Label className="label">Oib tenisača 1</Form.Label>
+                        <Form.Group controlId="player1">
+                            <Form.Label className="label">Igrač 1</Form.Label>
                             <Form.Control
-                                type="text"
-                                placeholder={pair?.player1oib}
-                                onChange={handlePlayer1oibChange}
-                                value={player1oib}
+                                as="select"
+                                value={player1oib ?? ''}
+                                id="player1-select"
+                                onChange={handlePlayer1Change}
                                 className="control"
-                            />
+                            >
+                                <option value="" disabled>Izaberi prvog igrača u paru</option>
+                                {players.map(player => (
+                                    <option key={player.playerId} value={player.oib}>
+                                        {player.name} {player.surname}, {player.oib}
+                                    </option>
+                                ))}
+                            </Form.Control>
                         </Form.Group>
-                        <Form.Group controlId="player1name">
-                            <Form.Label className="label">Ime tenisača 1</Form.Label>
+                        <Form.Group controlId="player2">
+                            <Form.Label className="label">Igrač 2</Form.Label>
                             <Form.Control
-                                type="text"
-                                placeholder={pair?.player1name}
-                                onChange={handlePlayer1nameChange}
-                                value={player1name}
+                                as="select"
+                                value={player2oib ?? ''}
+                                id="player2-select"
+                                onChange={handlePlayer2Change}
                                 className="control"
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="player1surname">
-                            <Form.Label className="label">Prezime tenisača 1</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={pair?.player1surname}
-                                onChange={handlePlayer1surnameChange}
-                                value={player1surname}
-                                className="control"
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="player2oib">
-                            <Form.Label className="label">Oib tenisača 2</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={pair?.player2oib}
-                                onChange={handlePlayer2oibChange}
-                                value={player2oib}
-                                className="control"
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="player2name">
-                            <Form.Label className="label">Ime tenisača 2</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={pair?.player2name}
-                                onChange={handlePlayer2nameChange}
-                                value={player2name}
-                                className="control"
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="player2surname">
-                            <Form.Label className="label">Prezime tenisača 2</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={pair?.player2surname}
-                                onChange={handlePlayer2surnameChange}
-                                value={player2surname}
-                                className="control"
-                            />
+                            >
+                                <option value="" disabled>Izaberi drugog igrača u paru</option>
+                                {players.map(player => (
+                                    <option key={player.playerId} value={player.oib}>
+                                        {player.name} {player.surname}, {player.oib}
+                                    </option>
+                                ))}
+                            </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="rank">
                             <Form.Label className="label">Rank</Form.Label>

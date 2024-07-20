@@ -48,6 +48,10 @@ public class ClubController {
     public List<GetTransactionDTO> getClubTransactions(@PathVariable("clubId") Long clubId) {
         return clubService.getClubTransactions(clubId); }
 
+    @GetMapping("/person")
+    public List<PersonDTO> getPerson() {
+        return clubService.getPerson(); }
+
     @PostMapping("/{clubId}/transactions")
     public ResponseEntity<Object> addNewTransaction(@ModelAttribute AddTransactionDTO dto, @PathVariable("clubId") Long clubId) {
         return clubService.addNewTransaction(dto, clubId);

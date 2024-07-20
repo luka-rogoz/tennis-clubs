@@ -1,14 +1,12 @@
 package com.tennisclubs.service;
 
 import com.tennisclubs.dao.*;
-import com.tennisclubs.dto.AddCoachDTO;
-import com.tennisclubs.dto.AddTrainingDTO;
-import com.tennisclubs.dto.GetCoachDTO;
-import com.tennisclubs.dto.GetTrainingDTO;
+import com.tennisclubs.dto.*;
 import com.tennisclubs.entity.*;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.time.LocalDate;
 import java.util.Date;
@@ -42,9 +40,9 @@ public class CoachService {
                         coach.getYearsOfExperience(), coach.getSpecialization(),
                         coach.getClubsCoachedAt().stream().filter(h -> h.getToDate() == null).map(HoldsTrainingSessions::getClub).
                                 toList().getLast().getName(), coach.getClubsCoachedAt()
-                        .stream().filter(h -> h.getToDate() != null).map(h -> h.getClub().getName() + ": " + h.getFromDate().getDayOfMonth() + ". " + h.getFromDate().getMonthValue() +
-                                ". " + h.getFromDate().getYear() + ". - " + h.getToDate().getDayOfMonth() + ". " + h.getToDate().getMonthValue()
-                                + ". " + h.getToDate().getYear() + ".").collect(Collectors.toSet()))).toList();
+                        .stream().filter(h -> h.getToDate() != null).map(h -> h.getClub().getName() + ": " + h.getFromDate().getDayOfMonth() + "." + h.getFromDate().getMonthValue() +
+                                "." + h.getFromDate().getYear() + ". - " + h.getToDate().getDayOfMonth() + "." + h.getToDate().getMonthValue()
+                                + "." + h.getToDate().getYear() + ".").collect(Collectors.toSet()))).toList();
     }
 
     public ResponseEntity<Object> addNewCoach(AddCoachDTO dto) {
@@ -69,9 +67,9 @@ public class CoachService {
         Club club = coach.getClubsCoachedAt().stream().filter(h -> h.getToDate() == null).
                 map(HoldsTrainingSessions::getClub).toList().getLast();
         Set<String> previousClubs = coach.getClubsCoachedAt().stream().filter(h -> h.getToDate() != null)
-                .map(h -> h.getClub().getName() + ": " + h.getFromDate().getDayOfMonth() + ". " + h.getFromDate().getMonthValue() +
-                        ". " + h.getFromDate().getYear() + ". - " + h.getToDate().getDayOfMonth() + ". " + h.getToDate().getMonthValue()
-                + ". " + h.getToDate().getYear() + ".").collect(Collectors.toSet());
+                .map(h -> h.getClub().getName() + ": " + h.getFromDate().getDayOfMonth() + "." + h.getFromDate().getMonthValue() +
+                        "." + h.getFromDate().getYear() + ". - " + h.getToDate().getDayOfMonth() + "." + h.getToDate().getMonthValue()
+                + "." + h.getToDate().getYear() + ".").collect(Collectors.toSet());
         return new GetCoachDTO(coach.getPersonId(), coach.getOib(), coach.getName(), coach.getSurname(), coach.getDateOfBirth(),
                 coach.getSex(), coach.getPlace().getZipCode(), coach.getPlace().getName(), coach.getYearsOfExperience(),
                 coach.getSpecialization(), club.getName(), previousClubs);
@@ -137,6 +135,15 @@ public class CoachService {
                         ts.getCoach().getSurname() + ", " + ts.getCoach().getOib(), ts.getPlayers().stream()
                         .map(player -> player.getName() + " " + player.getSurname() + ", " + player.getOib()).
                         collect(Collectors.toSet()))).toList();
+    }
+
+    public List<PersonDTO> getPlayersAvailableToTheCoach(Long coachId) {
+        return playerRepository.findAll().stream().filter(p -> p.getClubsPlayedAt().stream().
+                filter(r -> r.getToDate() == null).map(Represents::getClub).
+                toList().getLast().getName().equals(coachRepository.findByPersonId(coachId).orElseThrow().
+                        getClubsCoachedAt().stream().filter(h -> h.getToDate() == null).map(HoldsTrainingSessions::getClub).
+                        toList().getLast().getName())).map(p -> new PersonDTO(p.getPersonId(), p.getOib(), p.getName(),
+                p.getSurname())).toList();
     }
 
     public ResponseEntity<Object> addNewTrainingSession(AddTrainingDTO dto, Long coachId) {

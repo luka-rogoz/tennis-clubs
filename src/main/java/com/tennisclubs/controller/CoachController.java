@@ -1,9 +1,6 @@
 package com.tennisclubs.controller;
 
-import com.tennisclubs.dto.AddCoachDTO;
-import com.tennisclubs.dto.AddTrainingDTO;
-import com.tennisclubs.dto.GetCoachDTO;
-import com.tennisclubs.dto.GetTrainingDTO;
+import com.tennisclubs.dto.*;
 import com.tennisclubs.service.CoachService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -49,6 +46,11 @@ public class CoachController {
     @GetMapping("/{coachId}/training-sessions")
     public List<GetTrainingDTO> getCoachTrainingSessions(@PathVariable("coachId") Long coachId) {
         return coachService.getCoachTrainingSessions(coachId);
+    }
+
+    @GetMapping("/{coachId}/players")
+    public List<PersonDTO> getPlayersAvailableToTheCoach(@PathVariable("coachId") Long coachId) {
+        return coachService.getPlayersAvailableToTheCoach(coachId);
     }
 
     @PostMapping("/{coachId}/training-sessions")

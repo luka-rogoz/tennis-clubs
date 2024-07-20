@@ -1,7 +1,7 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link, useParams} from "react-router-dom";
-import './ClubManager.css'
+import {useParams} from "react-router-dom";
+import './Manager.css'
 import {Button, Form} from "react-bootstrap";
 
 interface Transaction {
@@ -16,9 +16,17 @@ interface Transaction {
     description: string;
 }
 
+interface Person {
+    personId: number;
+    oib: string;
+    name: string;
+    surname: string;
+}
+
 function TransactionManager() {
     const { clubId } = useParams<{ clubId: string }>();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [person, setPerson] = useState<Person[]>([]);
     const [name, setName] = useState("");
     const [surname, setSurname] = useState("");
     const [oib, setOib] = useState("");
@@ -28,20 +36,31 @@ function TransactionManager() {
     const [description, setDescription] = useState("");
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
+    const [selectedPerson, setSelectedPerson] = useState('');
+
+    const [filterName, setFilterName] = useState("");
+    const [filterSurname, setFilterSurname] = useState("");
+    const [filterPrice, setFilterPrice] = useState("");
+    const [filterDescription, setFilterDescriptione] = useState("");
+    const [filterPaymentMethod, setFilterPaymentMethod] = useState<string[]>([]);
+
+    const [sortCriteria, setSortCriteria] = useState<keyof Transaction>("name");
+    const [sortOrder, setSortOrder] = useState<string>("asc");
 
     useEffect(() => {
         axios.get(`/clubs/${clubId}/transactions`)
             .then(response => setTransactions(response.data))
             .catch(error => console.error("Error fetching transactions: ", error));
-    }, [transactions, clubId])
+        axios.get(`/clubs/person`)
+            .then(response => setPerson(response.data))
+            .catch(error => console.error("Error fetching person: ", error));
+    }, [transactions, clubId, person])
 
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
-            name,
-            surname,
-            oib,
             transactionTimestamp,
             price,
             paymentMethod,
@@ -63,7 +82,7 @@ function TransactionManager() {
 
         const oibRegex = /^\d{11}$/;
         if (!oibRegex.test(oib)) {
-            setFormError("Format oib-a je neispravan!");
+            setFormError(`Format oib-a je neispravan!`);
 
             if (errorRef.current) {
                 errorRef.current.scrollIntoView({
@@ -75,7 +94,7 @@ function TransactionManager() {
             return;
         }
 
-        const priceRegex = /^\d+([.,])?\d*$/;
+        const priceRegex = /^-?\d+([.,]?\d*)?$/;
         if (!priceRegex.test(price)) {
             setFormError("Format cijene je neispravan!");
 
@@ -132,15 +151,14 @@ function TransactionManager() {
         setDescription("");
     }
 
-    const handleNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setName(e.target.value);
-    const handleSurnameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setSurname(e.target.value);
-    const handleOibChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setOib(e.target.value);
+    const handlePersonChange = (event: { target: { value: string; }; }) => {
+        const selectedPerson = person.find(p => p.oib === event.target.value);
+        if (selectedPerson) {
+            setOib(selectedPerson.oib);
+            setName(selectedPerson.name);
+            setSurname(selectedPerson.surname);
+        }
+    };
     const handleTransactionTimestampChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setTransactionTimestamp(e.target.value);
@@ -151,25 +169,165 @@ function TransactionManager() {
         target: { value: SetStateAction<string> };
     }) => setDescription(e.target.value);
 
+    const handleFilterNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterName(e.target.value);
+    const handleFilterSurnameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterSurname(e.target.value);
+    const handleFilterPriceChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterPrice(e.target.value);
+    const handleFilterDescriptionChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterDescriptione(e.target.value);
+    const handleFilterPaymentMethodChange = (value: string) => {
+        setFilterPaymentMethod(prev =>
+            prev.includes(value)
+                ? prev.filter(method => method !== value)
+                : [...prev, value]
+        );
+    };
+
+    const handleSortChange = (criteria: keyof Transaction) => {
+        setSortCriteria(criteria);
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    };
+
+    const sortTransactions = (transactions: Transaction[], criteria: keyof Transaction, order: string) => {
+        return transactions.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return order === "asc" ? -1 : 1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const filteredTransactions = transactions.filter(transaction => {
+        return (
+            (filterName === "" || transaction.name.toLowerCase().includes(filterName.toLowerCase())) &&
+            (filterSurname === "" || transaction.surname.toLowerCase().includes(filterSurname.toLowerCase())) &&
+            (filterPrice === "" || transaction.price.toString().includes(filterPrice.toLowerCase())) &&
+            (filterDescription === "" || transaction.description.toLowerCase().includes(filterDescription.toLowerCase())) &&
+            (filterPaymentMethod.length === 0 || filterPaymentMethod.includes(transaction.paymentMethod))
+        );
+    });
+
+    const sortedTransactions = sortTransactions(filteredTransactions, sortCriteria, sortOrder);
+
     document.title = "Transakcije";
     return (
         <div>
             <div className="container">
                 <h1>Klupske transakcije</h1>
-                <p>Ovdje možete pregledavati sve transakcije za odabrani klub koje se nalaze u bazi, unijeti nove transakcije te
-                ažurirati podatke za postojeće.</p>
+                <p>Ovdje možete pregledavati sve transakcije za odabrani klub koje se nalaze u bazi, unijeti nove
+                    transakcije te
+                    ažurirati podatke za postojeće.</p>
+                <hr/>
+                <h2>Filtriraj transakcije:</h2>
+                <Form>
+                    <Form.Group controlId="filterName">
+                        <Form.Label className="label">Filtriraj po imenu osobe</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime osobe"
+                            onChange={handleFilterNameChange}
+                            value={filterName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterSurname">
+                        <Form.Label className="label">Filtriraj po prezimenu osobe</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite prezime osobe"
+                            onChange={handleFilterSurnameChange}
+                            value={filterSurname}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterPrice">
+                        <Form.Label className="label">Filtriraj po iznosu transakcije</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite iznos transakcije"
+                            onChange={handleFilterPriceChange}
+                            value={filterPrice}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterDescription">
+                        <Form.Label className="label">Filtriraj po opisu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite opis transakcije"
+                            onChange={handleFilterDescriptionChange}
+                            value={filterDescription}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterPaymentMethod">
+                        <Form.Label className="label">Filtriraj po načinu plaćanja</Form.Label>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="creditCardFilter"
+                                name="filterSurface"
+                                value="CREDIT_CARD"
+                                checked={filterPaymentMethod.includes("CREDIT_CARD")}
+                                onChange={() => handleFilterPaymentMethodChange("CREDIT_CARD")}
+                            />
+                            <label>Kreditna kartica</label>
+                        </div>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="cashFilter"
+                                name="filterSurface"
+                                value="CASH"
+                                checked={filterPaymentMethod.includes("CASH")}
+                                onChange={() => handleFilterPaymentMethodChange("CASH")}
+                            />
+                            <label>Gotovina</label>
+                        </div>
+                    </Form.Group>
+                </Form>
+                <Form.Group controlId="sortCriteria">
+                    <Form.Label className="label">Sortiraj po:</Form.Label>
+                    <Form.Control
+                        as="select"
+                        value={sortCriteria}
+                        onChange={(e) => handleSortChange(e.target.value as keyof Transaction)}
+                        className="control"
+                    >
+                        <option value="transactionTimestamp">Datumu i vremenu transakcije</option>
+                        <option value="surname">Prezimenu osobe</option>
+                        <option value="price">Iznosu transakcije</option>
+                    </Form.Control>
+                    <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    >
+                        Poredaj {sortOrder === "asc" ? "silazno" : "uzlazno"}
+                    </Button>
+                </Form.Group>
+                <div className="empty"></div>
+                <hr/>
                 <h2>Popis transakcija:</h2>
-                {transactions.length === 0 ? (
+                {sortedTransactions.length === 0 ? (
                     <p style={{fontStyle: 'italic'}}>Trenutno nema transakcija za odabrani klub u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
-                        {transactions.map(transaction => (
-                            <tr key={transaction.transactionId}>
-                                <Link to={`/clubs/${clubId}/transactions/${transaction.transactionId}`}>
-                                    <td>{transaction.name} {transaction.surname}, {transaction.oib}</td>
-                                    <td>{transaction.price} €</td>
-                                </Link>
+                        {sortedTransactions.map(transaction => (
+                            <tr key={transaction.transactionId} style={{cursor: 'pointer'}}
+                                onClick={() => window.location.href = `/clubs/${clubId}/transactions/${transaction.transactionId}`}>
+                                <td>{transaction.name} {transaction.surname}, {transaction.oib}</td>
+                                <td>{transaction.price} €</td>
                             </tr>
                         ))}
                         </tbody>
@@ -180,37 +338,25 @@ function TransactionManager() {
                         {formError}
                     </div>
                 )}
+                <div className="empty"></div>
+                <hr/>
                 <h2>Dodajte novu transakciju:</h2>
                 <Form onSubmit={handleSubmit}>
-                    <Form.Group controlId="name">
-                        <Form.Label className="label">Ime osobe</Form.Label>
+                    <Form.Group controlId="person">
+                        <Form.Label className="label">Osoba uz koju je transakcija vezana</Form.Label>
                         <Form.Control
-                            type="text"
-                            placeholder="Upišite ime osobe s kojom se izvršava transakcija"
-                            onChange={handleNameChange}
-                            value={name}
+                            as="select"
+                            value={oib ?? ''}
+                            onChange={handlePersonChange}
                             className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="surname">
-                        <Form.Label className="label">Prezime osobe</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite prezime osobe s kojom se izvršava transakcija"
-                            onChange={handleSurnameChange}
-                            value={surname}
-                            className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="oib">
-                        <Form.Label className="label">Oib osobe</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite oib osobe s kojom se izvršava transakcija"
-                            onChange={handleOibChange}
-                            value={oib}
-                            className="control"
-                        />
+                        >
+                            <option value="" disabled>Izaberi osobu</option>
+                            {person.map(p => (
+                                <option key={p.personId} value={p.oib}>
+                                    {p.name} {p.surname}, {p.oib}
+                                </option>
+                            ))}
+                        </Form.Control>
                     </Form.Group>
                     <Form.Group controlId="transactionTimestamp">
                         <Form.Label className="label">Datum i vrijeme transakcije</Form.Label>
@@ -220,7 +366,7 @@ function TransactionManager() {
                             value={transactionTimestamp}
                         />
                     </Form.Group>
-                    <Form.Group controlId="webAddress">
+                    <Form.Group controlId="price">
                         <Form.Label className="label">Iznos</Form.Label>
                         <Form.Control
                             type="text"
@@ -266,7 +412,7 @@ function TransactionManager() {
                     <Button variant="success" type="submit">
                         Dodaj transakciju
                     </Button>
-                    <Button variant="secondary" className="ms-2" onClick={resetFormFields}>
+                    <Button variant="secondary" className="button-space" onClick={resetFormFields}>
                         Odustani
                     </Button>
                 </Form>

@@ -19,9 +19,22 @@ interface Coach {
     previousClubs: Set<string>;
 }
 
+interface Club {
+    clubId: number;
+    name: string;
+    foundationYear: number;
+    email: string;
+    phoneNumber: string;
+    webAddress: string;
+    budget: number;
+    zipCode: number;
+    placeName: string;
+}
+
 function CoachDetail() {
     const { coachId } = useParams<{ coachId: string }>();
     const [coach, setCoach] = useState<Coach>();
+    const [clubs, setClubs] = useState<Club[]>([]);
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
@@ -43,7 +56,10 @@ function CoachDetail() {
         axios.get(`/coaches/${coachId}`)
             .then(response => setCoach(response.data))
             .catch(error => console.error("Error fetching coach: ", error));
-    }, [coachId])
+        axios.get('/clubs')
+            .then(response => setClubs(response.data))
+            .catch(error => console.error("Error fetching clubs: ", error));
+    }, [coachId, clubs])
 
     const handleDeleteClick = async () => {
         try {
@@ -68,6 +84,7 @@ function CoachDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const oibRegex = /^\d{11}$/;
         if (!oibRegex.test(oib)) {
@@ -164,6 +181,14 @@ function CoachDetail() {
         target: { value: SetStateAction<string> };
     }) => setFrom(e.target.value);
 
+    function formatDate(dateString: string): string {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Mjeseci su 0-indeksirani
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}.`;
+    }
+
     document.title = coach?.name + " " + coach?.surname;
     return (
         <div>
@@ -173,7 +198,7 @@ function CoachDetail() {
                 <p><strong>Mjesto: </strong>{coach?.zipCode} {coach?.placeName}</p>
                 {coach?.clubName && <p><strong>Ime kluba: </strong>{coach.clubName}</p>}
                 {coach?.oib && <p><strong>Oib: </strong>{coach.oib}</p>}
-                {coach?.dateOfBirth && <p><strong>Datum rođenja (YYYY-MM-DD): </strong>{coach.dateOfBirth}</p>}
+                {coach?.dateOfBirth && <p><strong>Datum rođenja: </strong>{formatDate(coach.dateOfBirth)}</p>}
                 {coach?.sex && coach.sex === "MALE" && <p><strong>Spol: </strong>Muško</p>}
                 {coach?.sex && coach.sex === "FEMALE" && <p><strong>Spol: </strong>Žensko</p>}
                 {coach?.specialization && <p><strong>Specijalizacija: </strong>{coach.specialization}</p>}
@@ -330,12 +355,18 @@ function CoachDetail() {
                         <Form.Group controlId="clubName">
                             <Form.Label className="label">Ime kluba</Form.Label>
                             <Form.Control
-                                type="text"
-                                placeholder={coach?.clubName}
+                                as="select"
+                                value={clubName ?? ''}
                                 onChange={handleClubNameChange}
-                                value={clubName}
                                 className="control"
-                            />
+                            >
+                                <option value="" disabled>Izaberi klub</option>
+                                {clubs.map(club => (
+                                    <option key={club.clubId} value={club.name}>
+                                        {club.name}
+                                    </option>
+                                ))}
+                            </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="dateFrom">
                             <Form.Label className="label">Datum prelaska u klub</Form.Label>

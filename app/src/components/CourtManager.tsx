@@ -1,7 +1,7 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link, useParams} from "react-router-dom";
-import './ClubManager.css'
+import {useParams} from "react-router-dom";
+import './Manager.css'
 import {Button, Form} from "react-bootstrap";
 
 interface Court {
@@ -19,6 +19,12 @@ function CourtManager() {
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
 
+    const [filterName, setFilterName] = useState("");
+    const [filterSurface, setFilterSurface] = useState<string[]>([]);
+
+    const [sortCriteria, setSortCriteria] = useState<keyof Court>("name");
+    const [sortOrder, setSortOrder] = useState<string>("asc");
+
     useEffect(() => {
         axios.get(`/clubs/${clubId}/courts`)
             .then(response => setCourts(response.data))
@@ -27,6 +33,7 @@ function CourtManager() {
 
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             surface,
@@ -83,25 +90,132 @@ function CourtManager() {
         target: { value: SetStateAction<string> };
     }) => setName(e.target.value);
 
+    const handleFilterNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterName(e.target.value);
+    const handleFilterSurfaceChange = (value: string) => {
+        setFilterSurface(prev =>
+            prev.includes(value)
+                ? prev.filter(surface => surface !== value)
+                : [...prev, value]
+        );
+    };
+
+    const handleSortChange = (criteria: keyof Court) => {
+        setSortCriteria(criteria);
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    };
+
+    const sortCourts = (courts: Court[], criteria: keyof Court, order: string) => {
+        return courts.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return order === "asc" ? -1 : 1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const filteredCourts = courts.filter(court => {
+        return (
+            (filterName === "" || court.name.toLowerCase().includes(filterName.toLowerCase())) &&
+            (filterSurface.length === 0 || filterSurface.includes(court.surface))
+        );
+    });
+
+    const sortedCourts = sortCourts(filteredCourts, sortCriteria, sortOrder);
+
     document.title = "Tereni";
     return (
         <div>
             <div className="container">
                 <h1>Klupski tereni</h1>
                 <p>Ovdje možete pregledavati sve terene za odabrani klub koja se nalaze u bazi, unijeti nove terene te
-                ažurirati podatke za postojeće.</p>
+                    ažurirati podatke za postojeće.</p>
+                <hr/>
+                <h2>Filtriraj terene:</h2>
+                <Form>
+                    <Form.Group controlId="filterName">
+                        <Form.Label className="label">Filtriraj po imenu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime terena"
+                            onChange={handleFilterNameChange}
+                            value={filterName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterSurface">
+                        <Form.Label className="label">Filtriraj po podlozi</Form.Label>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="clayFilter"
+                                name="filterSurface"
+                                value="CLAY"
+                                checked={filterSurface.includes("CLAY")}
+                                onChange={() => handleFilterSurfaceChange("CLAY")}
+                            />
+                            <label>Zemlja</label>
+                        </div>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="grassFilter"
+                                name="filterSurface"
+                                value="GRASS"
+                                checked={filterSurface.includes("GRASS")}
+                                onChange={() => handleFilterSurfaceChange("GRASS")}
+                            />
+                            <label>Trava</label>
+                        </div>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="hardFilter"
+                                name="filterSurface"
+                                value="HARD"
+                                checked={filterSurface.includes("HARD")}
+                                onChange={() => handleFilterSurfaceChange("HARD")}
+                            />
+                            <label>Tvrda</label>
+                        </div>
+                    </Form.Group>
+                </Form>
+                <Form.Group controlId="sortCriteria">
+                    <Form.Label className="label">Sortiraj po:</Form.Label>
+                    <Form.Control
+                        as="select"
+                        value={sortCriteria}
+                        onChange={(e) => handleSortChange(e.target.value as keyof Court)}
+                        className="control"
+                    >
+                        <option value="name">Imenu</option>
+                        <option value="surface">Podlozi</option>
+                    </Form.Control>
+                    <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    >
+                        Poredaj {sortOrder === "asc" ? "silazno" : "uzlazno"}
+                    </Button>
+                </Form.Group>
+                <div className="empty"></div>
+                <hr/>
                 <h2>Popis terena:</h2>
-                {courts.length === 0 ? (
+                {sortedCourts.length === 0 ? (
                     <p style={{fontStyle: 'italic'}}>Trenutno nema terena za odabrani klub u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
-                        {courts.map(court => (
-                            <tr key={court.courtId}>
-                                <Link to={`/clubs/${clubId}/courts/${court.courtId}`}>
-                                    <td>{court.name}</td>
-                                    <td>{court.clubName}</td>
-                                </Link>
+                        {sortedCourts.map(court => (
+                            <tr key={court.courtId} style={{cursor: 'pointer'}}
+                                onClick={() => window.location.href = `/courts/${court.courtId}`}>
+                                <td>{court.name}</td>
+                                <td>{court.clubName}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -112,6 +226,8 @@ function CourtManager() {
                         {formError}
                     </div>
                 )}
+                <div className="empty"></div>
+                <hr/>
                 <h2>Dodajte novi teren:</h2>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group controlId="name">
@@ -160,7 +276,7 @@ function CourtManager() {
                     <Button variant="success" type="submit">
                         Dodaj teren
                     </Button>
-                    <Button variant="secondary" className="ms-2" onClick={resetFormFields}>
+                    <Button variant="secondary" className="button-space" onClick={resetFormFields}>
                         Odustani
                     </Button>
                 </Form>

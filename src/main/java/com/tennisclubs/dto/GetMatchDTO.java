@@ -1,6 +1,7 @@
 package com.tennisclubs.dto;
 
 import com.tennisclubs.entity.CategoryTypeEnum;
+import com.tennisclubs.entity.SexEnum;
 import com.tennisclubs.entity.StageEnum;
 
 import java.sql.Timestamp;
@@ -16,9 +17,13 @@ public class GetMatchDTO {
     private String opponent2;
     private String courtName;
     private String tournamentName;
+    private Long clubId;
     private CategoryTypeEnum categoryType;
+    private String ageLimit;
+    private SexEnum sexLimit;
+    private Integer winner;
 
-    public GetMatchDTO(Long matchId, LocalDateTime matchTimestamp, String matchResult, String duration, StageEnum stage, String opponent1, String opponent2, String courtName, String tournamentName, CategoryTypeEnum categoryType) {
+    public GetMatchDTO(Long matchId, LocalDateTime matchTimestamp, String matchResult, String duration, StageEnum stage, String opponent1, String opponent2, String courtName, String tournamentName, CategoryTypeEnum categoryType, String ageLimit, SexEnum sexLimit, Integer winner) {
         this.matchId = matchId;
         this.matchTimestamp = matchTimestamp;
         this.matchResult = matchResult;
@@ -29,6 +34,9 @@ public class GetMatchDTO {
         this.courtName = courtName;
         this.tournamentName = tournamentName;
         this.categoryType = categoryType;
+        this.ageLimit = ageLimit;
+        this.sexLimit = sexLimit;
+        this.winner = winner;
     }
 
     public Long getMatchId() { return matchId; }
@@ -66,4 +74,10 @@ public class GetMatchDTO {
     }
 
     public CategoryTypeEnum getCategory() { return categoryType; }
+
+    public String getAgeLimit() { return  ageLimit; }
+
+    public SexEnum getSexLimit() { return sexLimit; }
+
+    public Integer getWinner() { return winner; }
 }

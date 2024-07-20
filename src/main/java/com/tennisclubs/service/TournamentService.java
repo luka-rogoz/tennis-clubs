@@ -108,14 +108,17 @@ public class TournamentService {
                             m.getMatchResult(), m.getDuration(), m.getStage(), m.getPlayer1().getName() + " "
                             + m.getPlayer1().getSurname() + ", " + m.getPlayer1().getOib(), m.getPlayer2().getName() + " "
                             + m.getPlayer2().getSurname() + ", " + m.getPlayer2().getOib(), m.getCourt().getName(),
-                            m.getTournament().getName(), m.getTournament().getCategory().getType())).toList();
+                            m.getTournament().getName(), m.getTournament().getCategory().getType(),
+                            m.getTournament().getCategory().getAgeLimit(), m.getTournament().getCategory().getSexLimit(),
+                            Integer.parseInt(m.getMatchResult().split("-")[0]) > Integer.parseInt(m.getMatchResult().split("-")[1]) ? 1 : 2)).toList();
             case CategoryTypeEnum.DOUBLES ->
                     matchRepository.findAll().stream().filter(match -> match.getTournament().getTournamentId().
                             equals(tournamentId)).map(m -> new GetMatchDTO(m.getMatchId(), m.getMatchTimestamp(),
                             m.getMatchResult(), m.getDuration(), m.getStage(), m.getPair1().getPlayer1().getSurname() + "-"
                             + m.getPair1().getPlayer2().getSurname() + ", " + m.getPair1().getPairId(), m.getPair2().getPlayer1().getSurname() + "-" +
                             m.getPair2().getPlayer2().getSurname() + ", " + m.getPair2().getPairId(), m.getCourt().getName(), m.getTournament().getName(),
-                            m.getTournament().getCategory().getType())).toList();
+                            m.getTournament().getCategory().getType(), m.getTournament().getCategory().getAgeLimit(), m.getTournament().getCategory().getSexLimit(),
+                            Integer.parseInt(m.getMatchResult().split("-")[0]) > Integer.parseInt(m.getMatchResult().split("-")[1]) ? 1 : 2)).toList();
         };
     }
 
@@ -149,13 +152,16 @@ public class TournamentService {
                     new GetMatchDTO(m.getMatchId(), m.getMatchTimestamp(), m.getMatchResult(), m.getDuration(),
                             m.getStage(), m.getPlayer1().getName() + " " + m.getPlayer1().getSurname() + ", " + m.getPlayer1().getOib(), m.getPlayer2().getName() + " "
                             + m.getPlayer2().getSurname() + ", " + m.getPlayer2().getOib(), m.getCourt().getName(),
-                            m.getTournament().getName(), m.getTournament().getCategory().getType());
+                            m.getTournament().getName(), m.getTournament().getCategory().getType(),
+                            m.getTournament().getCategory().getAgeLimit(), m.getTournament().getCategory().getSexLimit(),
+                            Integer.parseInt(m.getMatchResult().split("-")[0]) > Integer.parseInt(m.getMatchResult().split("-")[1]) ? 1 : 2);
             case CategoryTypeEnum.DOUBLES ->
                     new GetMatchDTO(m.getMatchId(), m.getMatchTimestamp(), m.getMatchResult(), m.getDuration(),
                             m.getStage(), m.getPair1().getPlayer1().getSurname() + "-"
                             + m.getPair1().getPlayer2().getSurname() + ", " + m.getPair1().getPairId(), m.getPair2().getPlayer1().getSurname() + "-" +
                             m.getPair2().getPlayer2().getSurname() + ", " + m.getPair2().getPairId(), m.getCourt().getName(), m.getTournament().getName(),
-                            m.getTournament().getCategory().getType());
+                            m.getTournament().getCategory().getType(), m.getTournament().getCategory().getAgeLimit(), m.getTournament().getCategory().getSexLimit(),
+                            Integer.parseInt(m.getMatchResult().split("-")[0]) > Integer.parseInt(m.getMatchResult().split("-")[1]) ? 1 : 2);
         };
     }
 

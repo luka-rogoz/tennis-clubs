@@ -1,7 +1,6 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link} from "react-router-dom";
-import './ClubManager.css'
+import './Manager.css'
 import {Button, Form} from "react-bootstrap";
 
 interface Pair {
@@ -16,8 +15,27 @@ interface Pair {
     dateOfTermination: string;
 }
 
+interface Player {
+    playerId: number;
+    oib: string;
+    name: string;
+    surname: string;
+    dateOfBirth: string;
+    sex: string;
+    zipCode: number;
+    placeName: string;
+    height: number;
+    weight: number;
+    prefferedHand: string;
+    rank: number;
+    injury: string;
+    clubName: string;
+    from: string;
+}
+
 function DoubleManager() {
     const [doubles, setDoubles] = useState<Pair[]>([]);
+    const [players, setPlayers] = useState<Player[]>([]);
     const [player1oib, setPlayer1oib] = useState("");
     const [player1name, setPlayer1name] = useState("");
     const [player1surname, setPlayer1surname] = useState("");
@@ -29,14 +47,24 @@ function DoubleManager() {
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
 
+    const [filterRank, setFilterRank] = useState("");
+    const [filterDate, setFilterDate] = useState("");
+
+    const [sortCriteria, setSortCriteria] = useState<keyof Pair>("rank");
+    const [sortOrder, setSortOrder] = useState<string>("asc");
+
     useEffect(() => {
         axios.get('/doubles')
             .then(response => setDoubles(response.data))
             .catch(error => console.error("Error fetching doubles: ", error));
-    }, [doubles])
+        axios.get('/players')
+            .then(response => setPlayers(response.data))
+            .catch(error => console.error("Error fetching players: ", error));
+    }, [doubles, players])
 
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             player1oib,
@@ -48,21 +76,7 @@ function DoubleManager() {
         ];
 
         if (requiredFields.some((field) => field === null || field === "")) {
-            setFormError("Potrebno je unijeti oib, ime i prezime za oba igrača u paru!");
-
-            if (errorRef.current) {
-                errorRef.current.scrollIntoView({
-                    behavior: "smooth",
-                    block: "start",
-                });
-            }
-
-            return;
-        }
-
-        const oibRegex = /^\d{11}$/;
-        if (!oibRegex.test(player1oib) || !oibRegex.test(player2oib)) {
-            setFormError("Format oib-a je neispravan!");
+            setFormError("Potrebno je unijeti oba igrača u paru!");
 
             if (errorRef.current) {
                 errorRef.current.scrollIntoView({
@@ -118,30 +132,61 @@ function DoubleManager() {
         setDateOfTermination("");
     }
 
-    const handlePlayer1oibChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer1oib(e.target.value);
-    const handlePlayer1nameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer1name(e.target.value);
-    const handlePlayer1surnameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer1surname(e.target.value);
-    const handlePlayer2oibChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer2oib(e.target.value);
-    const handlePlayer2nameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer2name(e.target.value);
-    const handlePlayer2surnameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setPlayer2surname(e.target.value);
+    const handlePlayer1Change = (event: { target: { value: string; }; }) => {
+        const selectedPlayer = players.find(player => player.oib === event.target.value);
+        if (selectedPlayer) {
+            setPlayer1oib(selectedPlayer.oib);
+            setPlayer1name(selectedPlayer.name);
+            setPlayer1surname(selectedPlayer.surname);
+        }
+    };
+    const handlePlayer2Change = (event: { target: { value: string; }; }) => {
+        const selectedPlayer = players.find(player => player.oib === event.target.value);
+        if (selectedPlayer) {
+            setPlayer2oib(selectedPlayer.oib);
+            setPlayer2name(selectedPlayer.name);
+            setPlayer2surname(selectedPlayer.surname);
+        }
+    };
     const handleRankChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setRank(e.target.value);
     const handleDateOfTermination = (e: {
         target: { value: SetStateAction<string> };
     }) => setDateOfTermination(e.target.value);
+
+    const handleFilterRankChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterRank(e.target.value);
+    const handleFilterDateChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterDate(e.target.value);
+
+    const handleSortChange = (criteria: keyof Pair) => {
+        setSortCriteria(criteria);
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    };
+
+    const sortDoubles = (doubles: Pair[], criteria: keyof Pair, order: string) => {
+        return doubles.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return order === "asc" ? -1 : 1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const filteredDoubles = doubles.filter(double => {
+        return (
+            (filterRank === "" || double.rank.toString().toLowerCase().includes(filterRank.toLowerCase())) &&
+            (filterDate === "" || double.dateOfTermination.toString().includes(filterDate))
+        );
+    });
+
+    const sortedDoubles = sortDoubles(filteredDoubles, sortCriteria, sortOrder);
 
     document.title = "Parovi";
     return (
@@ -150,17 +195,59 @@ function DoubleManager() {
                 <h1>Parovi</h1>
                 <p>Ovdje možete pregledavati sve parove koji se nalaze u bazi, unijeti nove parove te
                     ažurirati podatke za postojeće.</p>
+                <hr/>
+                <h2>Filtriraj terene:</h2>
+                <Form>
+                    <Form.Group controlId="filterRank">
+                        <Form.Label className="label">Filtriraj po rankingu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite rank"
+                            onChange={handleFilterRankChange}
+                            value={filterRank}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterDate">
+                        <Form.Label className="label">Filtriraj po datumu prestanka djelovanja para</Form.Label>
+                        <Form.Control
+                            type="date"
+                            onChange={handleFilterDateChange}
+                            value={filterDate}
+                        />
+                    </Form.Group>
+                </Form>
+                <Form.Group controlId="sortCriteria">
+                    <Form.Label className="label">Sortiraj po:</Form.Label>
+                    <Form.Control
+                        as="select"
+                        value={sortCriteria}
+                        onChange={(e) => handleSortChange(e.target.value as keyof Pair)}
+                        className="control"
+                    >
+                        <option value="rank">Rankingu</option>
+                        <option value="dateOfTermination">Datumu prestanka djelovanja para</option>
+                    </Form.Control>
+                    <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    >
+                        Poredaj {sortOrder === "asc" ? "silazno" : "uzlazno"}
+                    </Button>
+                </Form.Group>
+                <div className="empty"></div>
+                <hr/>
                 <h2>Popis parova:</h2>
-                {doubles.length === 0 ? (
+                {sortedDoubles.length === 0 ? (
                     <p style={{fontStyle: 'italic'}}>Trenutno nema parova u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
-                        {doubles.map(pair => (
-                            <tr key={pair.pairId}>
-                                <Link to={`/doubles/${pair.pairId}`}>
-                                    <td>{pair.player1surname}-{pair.player2surname}</td>
-                                </Link>
+                        {sortedDoubles.map(pair => (
+                            <tr key={pair.pairId} style={{cursor: 'pointer'}}
+                                onClick={() => window.location.href = `/doubles/${pair.pairId}`}>
+                                <td>{pair.player1surname}-{pair.player2surname}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -171,67 +258,43 @@ function DoubleManager() {
                         {formError}
                     </div>
                 )}
+                <div className="empty"></div>
+                <hr/>
                 <h2>Dodajte novi par:</h2>
                 <Form onSubmit={handleSubmit}>
-                    <Form.Group controlId="player1oib">
-                        <Form.Label className="label">Oib tenisača 1</Form.Label>
+                    <Form.Group controlId="player1">
+                        <Form.Label className="label">Igrač 1</Form.Label>
                         <Form.Control
-                            type="text"
-                            placeholder="Upišite oib prvog tenisača u paru"
-                            onChange={handlePlayer1oibChange}
-                            value={player1oib}
+                            as="select"
+                            value={player1oib ?? ''}
+                            id="player1-select"
+                            onChange={handlePlayer1Change}
                             className="control"
-                        />
+                        >
+                            <option value="" disabled>Izaberi prvog igrača u paru</option>
+                            {players.map(player => (
+                                <option key={player.playerId} value={player.oib}>
+                                    {player.name} {player.surname}, {player.oib}
+                                </option>
+                            ))}
+                        </Form.Control>
                     </Form.Group>
-                    <Form.Group controlId="player1name">
-                        <Form.Label className="label">Ime tenisača 1</Form.Label>
+                    <Form.Group controlId="player2">
+                        <Form.Label className="label">Igrač 2</Form.Label>
                         <Form.Control
-                            type="text"
-                            placeholder="Upišite ime prvog tenisača u paru"
-                            onChange={handlePlayer1nameChange}
-                            value={player1name}
+                            as="select"
+                            value={player2oib ?? ''}
+                            id="player2-select"
+                            onChange={handlePlayer2Change}
                             className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="player1surname">
-                        <Form.Label className="label">Prezime tenisača 1</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite prezime prvog tenisača u paru"
-                            onChange={handlePlayer1surnameChange}
-                            value={player1surname}
-                            className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="player2oib">
-                        <Form.Label className="label">Oib tenisača 2</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite oib drugog tenisača u paru"
-                            onChange={handlePlayer2oibChange}
-                            value={player2oib}
-                            className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="player2name">
-                        <Form.Label className="label">Ime tenisača 2</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite ime drugog tenisača u paru"
-                            onChange={handlePlayer2nameChange}
-                            value={player2name}
-                            className="control"
-                        />
-                    </Form.Group>
-                    <Form.Group controlId="player2surname">
-                        <Form.Label className="label">Prezime tenisača 2</Form.Label>
-                        <Form.Control
-                            type="text"
-                            placeholder="Upišite prezime drugog tenisača u paru"
-                            onChange={handlePlayer2surnameChange}
-                            value={player2surname}
-                            className="control"
-                        />
+                        >
+                            <option value="" disabled>Izaberi drugog igrača u paru</option>
+                            {players.map(player => (
+                                <option key={player.playerId} value={player.oib}>
+                                    {player.name} {player.surname}, {player.oib}
+                                </option>
+                            ))}
+                        </Form.Control>
                     </Form.Group>
                     <Form.Group controlId="rank">
                         <Form.Label className="label">Rank</Form.Label>
@@ -254,7 +317,7 @@ function DoubleManager() {
                     <Button variant="success" type="submit">
                         Dodaj par
                     </Button>
-                    <Button variant="secondary" className="ms-2" onClick={resetFormFields}>
+                    <Button variant="secondary" className="button-space" onClick={resetFormFields}>
                         Odustani
                     </Button>
                 </Form>

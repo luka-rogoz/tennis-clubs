@@ -7,8 +7,11 @@ import com.tennisclubs.entity.pkeys.OwnsPK;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ClubService {
@@ -120,6 +123,11 @@ public class ClubService {
                         transaction.getPerson().getOib(), transaction.getClub().getName(),
                         transaction.getTransactionTimestamp(), transaction.getPrice(), transaction.getPaymentMethod(),
                         transaction.getDescription())).toList();
+    }
+
+    public List<PersonDTO> getPerson() {
+        return personRepository.findAll().stream().map(p -> new PersonDTO(p.getPersonId(), p.getOib(),
+                p.getName(), p.getSurname())).toList();
     }
 
     public ResponseEntity<Object> addNewTransaction(AddTransactionDTO dto, Long clubId) {

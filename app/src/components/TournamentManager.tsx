@@ -1,7 +1,6 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link} from "react-router-dom";
-import './ClubManager.css'
+import './Manager.css'
 import {Button, Form} from "react-bootstrap";
 
 interface Tournament {
@@ -36,6 +35,15 @@ function TournamentManager() {
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
 
+    const [filterName, setFilterName] = useState("");
+    const [filterClubName, setFilterClubName] = useState("");
+    const [filterAgeLimit, setFilterAgeLimit] = useState("");
+    const [filterSexLimit, setFilterSexLimit] = useState<string[]>([]);
+    const [filterCategory, setFilterSurface] = useState<string[]>([]);
+
+    const [sortCriteria, setSortCriteria] = useState<keyof Tournament>("name");
+    const [sortOrder, setSortOrder] = useState<string>("asc");
+
     useEffect(() => {
         axios.get('/tournaments')
             .then(response => setTournaments(response.data))
@@ -47,6 +55,7 @@ function TournamentManager() {
 
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             name,
@@ -129,6 +138,59 @@ function TournamentManager() {
         target: { value: SetStateAction<string> };
     }) => setClubName(e.target.value);
 
+    const handleFilterNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterName(e.target.value);
+    const handleFilterClubNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterClubName(e.target.value);
+    const handleFilterAgeLimitChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterAgeLimit(e.target.value);
+    const handleFilterSexLimitChange = (value: string) => {
+        setFilterSexLimit(prev =>
+            prev.includes(value)
+                ? prev.filter(sex => sex !== value)
+                : [...prev, value]
+        );
+    };
+    const handleFilterCategoryChange = (value: string) => {
+        setFilterSexLimit(prev =>
+            prev.includes(value)
+                ? prev.filter(category => category !== value)
+                : [...prev, value]
+        );
+    };
+
+    const handleSortChange = (criteria: keyof Tournament) => {
+        setSortCriteria(criteria);
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    };
+
+    const sortTournaments = (tournaments: Tournament[], criteria: keyof Tournament, order: string) => {
+        return tournaments.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return order === "asc" ? -1 : 1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const filteredTournaments = tournaments.filter(tournament => {
+        return (
+            (filterName === "" || tournament.name.toLowerCase().includes(filterName.toLowerCase())) &&
+            (filterClubName === "" || tournament.clubName.toLowerCase().includes(filterClubName.toLowerCase())) &&
+            (filterAgeLimit === "" || tournament.ageLimit.toLowerCase().includes(filterAgeLimit.toLowerCase())) &&
+            (filterSexLimit.length === 0 || filterSexLimit.includes(tournament.sexLimit)) &&
+            (filterCategory.length === 0 || filterCategory.includes(tournament.type))
+        );
+    });
+
+    const sortedTournaments = sortTournaments(filteredTournaments, sortCriteria, sortOrder);
+
     document.title = "Turniri";
     return (
         <div>
@@ -136,18 +198,123 @@ function TournamentManager() {
                 <h1>Turniri</h1>
                 <p>Ovdje možete pregledavati sve turnire koji se nalaze u bazi, unijeti nove turnire te
                     ažurirati podatke za postojeće.</p>
+                <hr/>
+                <h2>Filtriraj turnire:</h2>
+                <Form>
+                    <Form.Group controlId="filterName">
+                        <Form.Label className="label">Filtriraj po imenu turnira</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime turnira"
+                            onChange={handleFilterNameChange}
+                            value={filterName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterClubName">
+                        <Form.Label className="label">Filtriraj po imenu kluba organizatora</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime kluba organizatora"
+                            onChange={handleFilterClubNameChange}
+                            value={filterClubName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterAgeLimit">
+                        <Form.Label className="label">Filtriraj po dobnom ograničenju</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite dobno ograničenje"
+                            onChange={handleFilterAgeLimitChange}
+                            value={filterAgeLimit}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterSexLimit">
+                        <Form.Label className="label">Filtriraj po spolnom ograničenju</Form.Label>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="maleFilter"
+                                name="filterSexLimit"
+                                value="MALE"
+                                checked={filterSexLimit.includes("MALE")}
+                                onChange={() => handleFilterSexLimitChange("MALE")}
+                            />
+                            <label>Muškarci</label>
+                        </div>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="femaleFilter"
+                                name="filterSexLimit"
+                                value="FEMALE"
+                                checked={filterSexLimit.includes("FEMALE")}
+                                onChange={() => handleFilterSexLimitChange("FEMALE")}
+                            />
+                            <label>Žene</label>
+                        </div>
+                    </Form.Group>
+                    <Form.Group controlId="filterCategory">
+                        <Form.Label className="label">Filtriraj po kategoriji</Form.Label>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="singlesFilter"
+                                name="filterCategory"
+                                value="SINGLES"
+                                checked={filterCategory.includes("SINGLES")}
+                                onChange={() => handleFilterCategoryChange("SINGLES")}
+                            />
+                            <label>Singl</label>
+                        </div>
+                        <div className="form-check form-check-inline" style={{margin: 5}}>
+                            <input
+                                type="checkbox"
+                                id="doublesFilter"
+                                name="filterCategory"
+                                value="DOUBLES"
+                                checked={filterCategory.includes("DOUBLES")}
+                                onChange={() => handleFilterCategoryChange("DOUBLES")}
+                            />
+                            <label>Parovi</label>
+                        </div>
+                    </Form.Group>
+                </Form>
+                <Form.Group controlId="sortCriteria">
+                    <Form.Label className="label">Sortiraj po:</Form.Label>
+                    <Form.Control
+                        as="select"
+                        value={sortCriteria}
+                        onChange={(e) => handleSortChange(e.target.value as keyof Tournament)}
+                        className="control"
+                    >
+                        <option value="name">Imenu turnira</option>
+                        <option value="clubName">Imenu kluba</option>
+                        <option value="type">Kategoriji</option>
+                    </Form.Control>
+                    <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    >
+                        Poredaj {sortOrder === "asc" ? "silazno" : "uzlazno"}
+                    </Button>
+                </Form.Group>
+                <div className="empty"></div>
+                <hr/>
                 <h2>Popis turnira:</h2>
-                {tournaments.length === 0 ? (
+                {sortedTournaments.length === 0 ? (
                     <p style={{fontStyle: 'italic'}}>Trenutno nema turnira u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
-                        {tournaments.map(tournament => (
-                            <tr key={tournament.tournamentId}>
-                                <Link to={`/tournaments/${tournament.tournamentId}`}>
-                                    <td>{tournament.name}</td>
-                                    <td>{tournament.clubName}</td>
-                                </Link>
+                        {sortedTournaments.map(tournament => (
+                            <tr key={tournament.tournamentId} style={{cursor: 'pointer'}}
+                                onClick={() => window.location.href = `/tournaments/${tournament.tournamentId}`}>
+                                <td>{tournament.name}</td>
+                                <td>{tournament.clubName}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -172,14 +339,19 @@ function TournamentManager() {
                     </Form.Group>
                     <Form.Group controlId="clubName">
                         <Form.Label className="label">Ime kluba</Form.Label>
-                        <select id="club-select" value={clubName ?? ''} onChange={handleClubNameChange}>
+                        <Form.Control
+                            as="select"
+                            value={clubName ?? ''}
+                            onChange={handleClubNameChange}
+                            className="control"
+                        >
                             <option value="" disabled>Izaberi klub</option>
                             {clubs.map(club => (
                                 <option key={club.clubId} value={club.name}>
                                     {club.name}
                                 </option>
                             ))}
-                        </select>
+                        </Form.Control>
                     </Form.Group>
                     <Form.Group controlId="type">
                         <Form.Label className="label">Tip</Form.Label>
@@ -240,7 +412,7 @@ function TournamentManager() {
                     <Button variant="success" type="submit">
                         Dodaj turnir
                     </Button>
-                    <Button variant="secondary" className="ms-2" onClick={resetFormFields}>
+                    <Button variant="secondary" className="button-space" onClick={resetFormFields}>
                         Odustani
                     </Button>
                 </Form>

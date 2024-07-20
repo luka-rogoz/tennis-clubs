@@ -13,9 +13,22 @@ interface Tournament {
     sexLimit: string;
 }
 
+interface Club {
+    clubId: number;
+    name: string;
+    foundationYear: number;
+    email: string;
+    phoneNumber: string;
+    webAddress: string;
+    budget: number;
+    zipCode: number;
+    placeName: string;
+}
+
 function TournamentDetail() {
     const { tournamentId } = useParams<{ tournamentId: string }>();
     const [tournament, setTournament] = useState<Tournament>();
+    const [clubs, setClubs] = useState<Club[]>([]);
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
@@ -31,7 +44,10 @@ function TournamentDetail() {
         axios.get(`/tournaments/${tournamentId}`)
             .then(response => setTournament(response.data))
             .catch(error => console.error("Error fetching tournament: ", error));
-    }, [tournamentId])
+        axios.get('/clubs')
+            .then(response => setClubs(response.data))
+            .catch(error => console.error("Error fetching clubs: ", error));
+    }, [tournamentId, clubs])
 
     const handleDeleteClick = async () => {
         try {
@@ -56,6 +72,7 @@ function TournamentDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const ageRegex = /^\d*$/;
         if (!ageRegex.test(ageLimit)) {
@@ -176,12 +193,18 @@ function TournamentDetail() {
                         <Form.Group controlId="clubName">
                             <Form.Label className="label">Ime kluba</Form.Label>
                             <Form.Control
-                                type="text"
-                                placeholder={tournament?.clubName}
+                                as="select"
+                                value={clubName ?? ''}
                                 onChange={handleClubNameChange}
-                                value={clubName}
                                 className="control"
-                            />
+                            >
+                                <option value="" disabled>Izaberi klub</option>
+                                {clubs.map(club => (
+                                    <option key={club.clubId} value={club.name}>
+                                        {club.name}
+                                    </option>
+                                ))}
+                            </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="type">
                             <Form.Label className="label">Tip</Form.Label>
@@ -246,6 +269,6 @@ function TournamentDetail() {
             <div className="empty"></div>
         </div>
     )
-};
+}
 
 export default TournamentDetail;

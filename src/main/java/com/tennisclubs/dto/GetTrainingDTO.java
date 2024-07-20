@@ -13,6 +13,7 @@ public class GetTrainingDTO {
     private Set<String> players;
 
     public GetTrainingDTO(Long trainingId, LocalDateTime trainingTimestamp, String duration, String description, String notes, String coach, Set<String> players) {
+        this.trainingId = trainingId;
         this.trainingTimestamp = trainingTimestamp;
         this.duration = duration;
         this.description = description;

@@ -1,7 +1,6 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link, useNavigate} from "react-router-dom";
-import './ClubManager.css'
+import './Manager.css'
 import {Button, Form} from "react-bootstrap";
 
 interface Club {
@@ -29,6 +28,14 @@ function ClubManager() {
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
 
+    const [filterName, setFilterName] = useState("");
+    const [filterFoundationYear, setFilterFoundationYear] = useState("");
+    const [filterBudget, setFilterBudget] = useState("");
+    const [filterPlaceName, setFilterPlaceName] = useState("");
+
+    const [sortCriteria, setSortCriteria] = useState<keyof Club>("name");
+    const [sortOrder, setSortOrder] = useState<string>("asc");
+
     useEffect(() => {
         axios.get('/clubs')
             .then(response => setClubs(response.data))
@@ -37,6 +44,7 @@ function ClubManager() {
 
     const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             name,
@@ -73,7 +81,7 @@ function ClubManager() {
             return;
         }
 
-        const numberRegex = /^\d+$/;
+        const numberRegex = /^\d*$/;
         if (!numberRegex.test(phoneNumber)) {
             setFormError("Format broja telefona je neispravan! Upišite samo brojeve.");
 
@@ -99,7 +107,7 @@ function ClubManager() {
             return;
         }
 
-        const budgetRegex = /^\d+([.,])?\d*$/;
+        const budgetRegex = /^\d*([.,])?\d*$/;
         if (!budgetRegex.test(phoneNumber)) {
             setFormError("Format budžeta je neispravan!");
 
@@ -182,25 +190,132 @@ function ClubManager() {
         target: { value: SetStateAction<string> };
     }) => setPlaceName(e.target.value);
 
+    const handleFilterNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterName(e.target.value);
+    const handleFilterFoundationYearChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterFoundationYear(e.target.value);
+    const handleFilterBudgetChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterBudget(e.target.value);
+    const handleFilterPlaceNameChange = (e: {
+        target: { value: SetStateAction<string> };
+    }) => setFilterPlaceName(e.target.value);
+
+    const handleSortChange = (criteria: keyof Club) => {
+        setSortCriteria(criteria);
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    };
+
+    const sortClubs = (clubs: Club[], criteria: keyof Club, order: string) => {
+        return clubs.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return order === "asc" ? -1 : 1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return order === "asc" ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const filteredClubs = clubs.filter(club => {
+        return (
+            (filterName === "" || club.name.toLowerCase().includes(filterName.toLowerCase())) &&
+            (filterFoundationYear === "" || club.foundationYear.toString().includes(filterFoundationYear)) &&
+            (filterBudget === "" || club.budget.toString().includes(filterBudget)) &&
+            (filterPlaceName === "" || club.placeName.toLowerCase().includes(filterPlaceName.toLowerCase()))
+        );
+    });
+
+    const sortedClubs = sortClubs(filteredClubs, sortCriteria, sortOrder);
+
     document.title = "Klubovi";
     return (
         <div>
             <div className="container">
                 <h1>Teniski klubovi</h1>
                 <p>Ovdje možete pregledavati sve klubove koji se nalaze u bazi, unijeti nove klubove te
-                ažurirati podatke za postojeće.</p>
+                    ažurirati podatke za postojeće.</p>
+                <hr/>
+                <h2>Filtriraj klubove:</h2>
+                <Form>
+                    <Form.Group controlId="filterName">
+                        <Form.Label className="label">Filtriraj po imenu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime kluba"
+                            onChange={handleFilterNameChange}
+                            value={filterName}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterFoundationYear">
+                        <Form.Label className="label">Filtriraj po godini osnutka</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite godinu osnutka"
+                            onChange={handleFilterFoundationYearChange}
+                            value={filterFoundationYear}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterBudget">
+                        <Form.Label className="label">Filtriraj po budžetu</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite budžet u eurima"
+                            onChange={handleFilterBudgetChange}
+                            value={filterBudget}
+                            className="control"
+                        />
+                    </Form.Group>
+                    <Form.Group controlId="filterPlaceName">
+                        <Form.Label className="label">Filtriraj po imenu mjesta</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Unesite ime mjesta"
+                            onChange={handleFilterPlaceNameChange}
+                            value={filterPlaceName}
+                            className="control"
+                        />
+                    </Form.Group>
+                </Form>
+                <Form.Group controlId="sortCriteria">
+                    <Form.Label className="label">Sortiraj po:</Form.Label>
+                    <Form.Control
+                        as="select"
+                        value={sortCriteria}
+                        onChange={(e) => handleSortChange(e.target.value as keyof Club)}
+                        className="control"
+                    >
+                        <option value="name">Imenu</option>
+                        <option value="foundationYear">Godini osnutka</option>
+                        <option value="budget">Budžetu</option>
+                        <option value="placeName">Imenu mjesta</option>
+                    </Form.Control>
+                    <Button
+                        variant="primary"
+                        className="ms-2"
+                        onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    >
+                        Poredaj {sortOrder === "asc" ? "silazno" : "uzlazno"}
+                    </Button>
+                </Form.Group>
+                <div className="empty"></div>
+                <hr/>
                 <h2>Popis klubova:</h2>
-                {clubs.length === 0 ? (
+                {sortedClubs.length === 0 ? (
                     <p style={{fontStyle: 'italic'}}>Trenutno nema klubova u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
-                        {clubs.map(club => (
-                            <tr key={club.clubId}>
-                                <Link to={`/clubs/${club.clubId}`}>
-                                    <td>{club.name}</td>
-                                    <td>{club.placeName}</td>
-                                </Link>
+                        {sortedClubs.map(club => (
+                            <tr key={club.clubId} style={{cursor: 'pointer'}}
+                                onClick={() => window.location.href = `/clubs/${club.clubId}`}>
+                                <td>{club.name}</td>
+                                <td>{club.placeName}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -211,6 +326,8 @@ function ClubManager() {
                         {formError}
                     </div>
                 )}
+                <div className="empty"></div>
+                <hr/>
                 <h2>Dodajte novi klub:</h2>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group controlId="name">
@@ -224,14 +341,14 @@ function ClubManager() {
                         />
                     </Form.Group>
                     <Form.Group controlId="foundationYear">
-                    <Form.Label className="label">Godina osnutka</Form.Label>
-                    <Form.Control
-                        type="text"
-                        placeholder="Upišite godinu osnutka kluba"
-                        onChange={handleFoundationYearChange}
-                        value={foundationYear}
-                        className="control"
-                    />
+                        <Form.Label className="label">Godina osnutka</Form.Label>
+                        <Form.Control
+                            type="text"
+                            placeholder="Upišite godinu osnutka kluba"
+                            onChange={handleFoundationYearChange}
+                            value={foundationYear}
+                            className="control"
+                        />
                     </Form.Group>
                     <Form.Group controlId="email">
                         <Form.Label className="label">Email</Form.Label>
@@ -296,7 +413,7 @@ function ClubManager() {
                     <Button variant="success" type="submit">
                         Dodaj klub
                     </Button>
-                    <Button variant="secondary" className="ms-2" onClick={resetFormFields}>
+                    <Button variant="secondary" className="button-space" onClick={resetFormFields}>
                         Odustani
                     </Button>
                 </Form>

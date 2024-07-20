@@ -22,9 +22,22 @@ interface Player {
     previousClubs: Set<string>;
 }
 
+interface Club {
+    clubId: number;
+    name: string;
+    foundationYear: number;
+    email: string;
+    phoneNumber: string;
+    webAddress: string;
+    budget: number;
+    zipCode: number;
+    placeName: string;
+}
+
 function PlayerDetail() {
     const { playerId } = useParams<{ playerId: string }>();
     const [player, setPlayer] = useState<Player>();
+    const [clubs, setClubs] = useState<Club[]>([]);
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
@@ -49,7 +62,10 @@ function PlayerDetail() {
         axios.get(`/players/${playerId}`)
             .then(response => setPlayer(response.data))
             .catch(error => console.error("Error fetching player: ", error));
-    }, [playerId])
+        axios.get('/clubs')
+            .then(response => setClubs(response.data))
+            .catch(error => console.error("Error fetching clubs: ", error));
+    }, [playerId, clubs])
 
     const handleDeleteClick = async () => {
         try {
@@ -74,6 +90,7 @@ function PlayerDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const oibRegex = /^\d{11}$/;
         if (!oibRegex.test(oib)) {
@@ -178,6 +195,14 @@ function PlayerDetail() {
         target: { value: SetStateAction<string> };
     }) => setFrom(e.target.value);
 
+    function formatDate(dateString: string): string {
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Mjeseci su 0-indeksirani
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}.`;
+    }
+
     document.title = player?.name + " " + player?.surname;
     return (
         <div>
@@ -187,7 +212,7 @@ function PlayerDetail() {
                 <p><strong>Mjesto: </strong>{player?.zipCode} {player?.placeName}</p>
                 {player?.clubName && <p><strong>Ime kluba: </strong>{player.clubName}</p>}
                 {player?.oib && <p><strong>Oib: </strong>{player.oib}</p>}
-                {player?.dateOfBirth && <p><strong>Datum rođenja (YYYY-MM-DD): </strong>{player.dateOfBirth}</p>}
+                {player?.dateOfBirth && <p><strong>Datum rođenja: </strong>{formatDate(player.dateOfBirth)}</p>}
                 {player?.sex && player.sex === "MALE" && <p><strong>Spol: </strong>Muško</p>}
                 {player?.sex && player.sex === "FEMALE" && <p><strong>Spol: </strong>Žensko</p>}
                 {player?.height && <p><strong>Visina: </strong>{player.height} cm</p>}
@@ -195,7 +220,7 @@ function PlayerDetail() {
                 {player?.prefferedHand && <p><strong>Snažnija ruka: </strong>{player.prefferedHand}</p>}
                 {player?.rank && <p><strong>Rank: </strong>{player.rank}</p>}
                 {player?.injury && <p><strong>Ozljeda: </strong>{player.injury}</p>}
-                {player?.previousClubs && (
+                {player?.previousClubs.size != undefined && (
                     <ol><p><strong>Prijašnji klubovi:</strong></p>
                         {[...(player?.previousClubs ?? new Set())].map((item) => (
                             <li key={item}><p>{item}</p></li>
@@ -390,12 +415,18 @@ function PlayerDetail() {
                         <Form.Group controlId="clubName">
                             <Form.Label className="label">Ime kluba</Form.Label>
                             <Form.Control
-                                type="text"
-                                placeholder={player?.clubName}
+                                as="select"
+                                value={clubName ?? ''}
                                 onChange={handleClubNameChange}
-                                value={clubName}
                                 className="control"
-                            />
+                            >
+                                <option value="" disabled>Izaberi klub</option>
+                                {clubs.map(club => (
+                                    <option key={club.clubId} value={club.name}>
+                                        {club.name}
+                                    </option>
+                                ))}
+                            </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="dateFrom">
                             <Form.Label className="label">Datum prelaska u klub</Form.Label>

@@ -26,6 +26,7 @@ import MeetingDetail from "./components/MeetingDetail";
 import MatchDetail from "./components/MatchDetail";
 import EquipmentDetail from "./components/EquipmentDetail";
 import CourtDetail from "./components/CourtDetail";
+import DoubleMatches from "./components/DoubleMatches";
 
 function App() {
     document.title = "Aplikacija za teniske klubove"
@@ -54,6 +55,7 @@ function App() {
             <Route path="/players/:playerId/singles-matches" element={<PlayerMatches />} />
             <Route path="/doubles" element={<DoubleManager />} />
             <Route path="/doubles/:pairId" element={<DoubleDetail />}/>
+            <Route path="/doubles/:pairId/doubles-matches" element={<DoubleMatches />} />
             <Route path="/tournaments" element={<TournamentManager />} />
             <Route path="/tournaments/:tournamentId" element={<TournamentDetail />}/>
             <Route path="/tournaments/:tournamentId/matches" element={<MatchManager />}/>

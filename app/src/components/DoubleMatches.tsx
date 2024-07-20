@@ -28,19 +28,19 @@ interface Tournament {
     sexLimit: string;
 }
 
-function PlayerMatches() {
-    const { playerId } = useParams<{ playerId: string }>();
+function DoubleMatches() {
+    const { pairId } = useParams<{ pairId: string }>();
     const [matches, setMatches] = useState<Match[]>([]);
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
 
     useEffect(() => {
-        axios.get(`/players/${playerId}/singles-matches`)
+        axios.get(`/doubles/${pairId}/doubles-matches`)
             .then(response => setMatches(response.data))
             .catch(error => console.error("Error fetching matches: ", error));
         axios.get('/tournaments')
             .then(response => setTournaments(response.data))
             .catch(error => console.error("Error fetching tournaments: ", error));
-    }, [playerId]);
+    }, [pairId]);
 
     const getTournamentIdByName = (name: string): number | undefined => {
         const tournament = tournaments.find(t => t.name === name);
@@ -58,15 +58,15 @@ function PlayerMatches() {
         return `${day}.${month}.${year}. ${hours}:${minutes}`;
     }
 
-    document.title = "Singl mečevi";
+    document.title = "Mečevi para";
     return (
         <div>
             <div className="container">
-                <h1>Singl mečevi</h1>
-                <p>Ovdje možete pregledavati sve mečeve za odabranog tenisača koji se nalaze u bazi.</p>
-                <h2>Popis singl mečeva:</h2>
+                <h1>Mečevi para</h1>
+                <p>Ovdje možete pregledavati sve mečeve za odabrani par koji se nalaze u bazi.</p>
+                <h2>Popis mečeva para:</h2>
                 {matches.length === 0 ? (
-                    <p style={{ fontStyle: 'italic' }}>Trenutno nema singl mečeva za odabranog tenisača u bazi.</p>
+                    <p style={{ fontStyle: 'italic' }}>Trenutno nema mečeva za odabrani par u bazi.</p>
                 ) : (
                     <table>
                         <tbody>
@@ -96,4 +96,4 @@ function PlayerMatches() {
     );
 }
 
-export default PlayerMatches;
+export default DoubleMatches;

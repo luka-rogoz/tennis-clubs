@@ -1,8 +1,8 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link, useNavigate, useParams} from "react-router-dom";
-import './ClubManager.css'
-import {Button, Form} from "react-bootstrap";
+import {useNavigate, useParams} from "react-router-dom";
+import './Manager.css'
+import {Form} from "react-bootstrap";
 
 interface Transaction {
     transactionId: number;
@@ -16,9 +16,17 @@ interface Transaction {
     description: string;
 }
 
+interface Person {
+    personId: number;
+    oib: string;
+    name: string;
+    surname: string;
+}
+
 function TransactionDetail() {
     const { clubId, transactionId } = useParams<{ clubId: string, transactionId: string }>();
     const [transaction, setTransaction] = useState<Transaction>();
+    const [person, setPerson] = useState<Person[]>([]);
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
@@ -31,12 +39,16 @@ function TransactionDetail() {
     const [description, setDescription] = useState("");
     const [formError, setFormError] = useState("");
     const errorRef = useRef<HTMLDivElement | null>(null);
+    const [selectedPerson, setSelectedPerson] = useState('');
 
     useEffect(() => {
         axios.get(`/clubs/${clubId}/transactions/${transactionId}`)
             .then(response => setTransaction(response.data))
             .catch(error => console.error("Error fetching transaction: ", error));
-    }, [transactionId, clubId])
+        axios.get(`/clubs/person`)
+            .then(response => setPerson(response.data))
+            .catch(error => console.error("Error fetching person: ", error));
+    }, [transactionId, clubId, person])
 
     const handleDeleteClick = async () => {
         try {
@@ -61,6 +73,7 @@ function TransactionDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const oibRegex = /^\d{11}$/;
         if (!oibRegex.test(oib)) {
@@ -123,15 +136,14 @@ function TransactionDetail() {
         }
     };
 
-    const handleNameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setName(e.target.value);
-    const handleSurnameChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setSurname(e.target.value);
-    const handleOibChange = (e: {
-        target: { value: SetStateAction<string> };
-    }) => setOib(e.target.value);
+    const handlePersonChange = (event: { target: { value: string; }; }) => {
+        const selectedPerson = person.find(p => p.oib === event.target.value);
+        if (selectedPerson) {
+            setOib(selectedPerson.oib);
+            setName(selectedPerson.name);
+            setSurname(selectedPerson.surname);
+        }
+    };
     const handleTransactionTimestampChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setTransactionTimestamp(e.target.value);
@@ -142,6 +154,17 @@ function TransactionDetail() {
         target: { value: SetStateAction<string> };
     }) => setDescription(e.target.value);
 
+    function formatDateTime(dateString: string | undefined): string {
+        if (dateString == undefined) return "";
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Mjeseci su 0-indeksirani
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}.${month}.${year}. ${hours}:${minutes}`;
+    }
+
     document.title = "Transakcija";
     return (
         <div>
@@ -150,7 +173,7 @@ function TransactionDetail() {
                 <p><strong>Ime, prezime i oib
                     osobe: </strong>{transaction?.name} {transaction?.surname}, {transaction?.oib}</p>
                 <p><strong>Ime kluba: </strong>{transaction?.clubName}</p>
-                <p><strong>Datum i vrijeme transakcije: </strong>{transaction?.transactionTimestamp}</p>
+                <p><strong>Datum i vrijeme transakcije: </strong>{formatDateTime(transaction?.transactionTimestamp)}</p>
                 <p><strong>Iznos: </strong>{transaction?.price}</p>
                 {transaction?.paymentMethod && transaction.paymentMethod === "CASH" &&
                     <p><strong>Način plaćanja: </strong>Gotovina</p>}
@@ -200,35 +223,21 @@ function TransactionDetail() {
                 )}
                 {showChangeButton && (
                     <Form onSubmit={handleChangeClick}>
-                        <Form.Group controlId="name">
-                            <Form.Label className="label">Ime osobe</Form.Label>
+                        <Form.Group controlId="person">
+                            <Form.Label className="label">Osoba uz koju je transakcija vezana</Form.Label>
                             <Form.Control
-                                type="text"
-                                placeholder={transaction?.name}
-                                onChange={handleNameChange}
-                                value={name}
+                                as="select"
+                                value={oib ?? ''}
+                                onChange={handlePersonChange}
                                 className="control"
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="surname">
-                            <Form.Label className="label">Prezime osobe</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={transaction?.surname}
-                                onChange={handleSurnameChange}
-                                value={surname}
-                                className="control"
-                            />
-                        </Form.Group>
-                        <Form.Group controlId="oib">
-                            <Form.Label className="label">Oib osobe</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder={transaction?.oib}
-                                onChange={handleOibChange}
-                                value={oib}
-                                className="control"
-                            />
+                            >
+                                <option value="" disabled>Izaberi osobu</option>
+                                {person.map(p => (
+                                    <option key={p.personId} value={p.oib}>
+                                        {p.name} {p.surname}, {p.oib}
+                                    </option>
+                                ))}
+                            </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="transactionTimestamp">
                             <Form.Label className="label">Datum i vrijeme transakcije</Form.Label>

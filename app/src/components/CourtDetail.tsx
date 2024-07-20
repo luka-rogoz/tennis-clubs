@@ -1,7 +1,7 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
 import {useNavigate, useParams} from "react-router-dom";
-import {Button, Form} from "react-bootstrap";
+import {Form} from "react-bootstrap";
 import './Detail.css'
 
 interface Court {
@@ -51,6 +51,7 @@ function EquipmentDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             surface,

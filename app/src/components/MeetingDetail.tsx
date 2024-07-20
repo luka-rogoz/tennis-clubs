@@ -1,8 +1,8 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link, useNavigate, useParams} from "react-router-dom";
-import './ClubManager.css'
-import {Button, Form} from "react-bootstrap";
+import {useNavigate, useParams} from "react-router-dom";
+import './Manager.css'
+import {Form} from "react-bootstrap";
 
 interface Meeting {
     meetingId: number;
@@ -13,9 +13,17 @@ interface Meeting {
     attendees: Set<string>;
 }
 
+interface Person {
+    personId: number;
+    oib: string;
+    name: string;
+    surname: string;
+}
+
 function MeetingDetail() {
     const { clubId, meetingId } = useParams<{ clubId: string, meetingId: string }>();
     const [meeting, setMeeting] = useState<Meeting>();
+    const [person, setPerson] = useState<Person[]>([]);
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
@@ -34,7 +42,10 @@ function MeetingDetail() {
         axios.get(`/clubs/${clubId}/meetings/${meetingId}`)
             .then(response => setMeeting(response.data))
             .catch(error => console.error("Error fetching meeting: ", error));
-    }, [meetingId, clubId])
+        axios.get(`/clubs/person`)
+            .then(response => setPerson(response.data))
+            .catch(error => console.error("Error fetching person: ", error));
+    }, [meetingId, clubId, person])
 
     const handleDeleteClick = async () => {
         try {
@@ -59,6 +70,7 @@ function MeetingDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             meetingTimestamp,
@@ -136,18 +148,29 @@ function MeetingDetail() {
     const handleAgendaChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setAgenda(e.target.value);
-    const handleOibChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleOibChange = (index: number, event: { target: { value: string; }; }) => {
         const newOibs = oibs.slice();
         newOibs[index] = event.target.value;
         setOibs(newOibs);
     };
+
+    function formatDateTime(dateString: string | undefined): string {
+        if (dateString == undefined) return "";
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Mjeseci su 0-indeksirani
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}.${month}.${year}. ${hours}:${minutes}`;
+    }
 
     document.title = "Sastanak";
     return (
         <div>
             <div className="container">
                 <h1>Podaci o sastanku</h1>
-                <p><strong>Datum i vrijeme sastanka: </strong>{meeting?.meetingTimestamp}</p>
+                <p><strong>Datum i vrijeme sastanka: </strong>{formatDateTime(meeting?.meetingTimestamp)}</p>
                 <p><strong>Ime kluba: </strong>{meeting?.clubName}</p>
                 {meeting?.attendees.size && (
                     <ol><p><strong>Prisutni:</strong></p>
@@ -230,19 +253,26 @@ function MeetingDetail() {
                             />
                         </Form.Group>
                         {oibs.map((oib, index) => (
-                            <div key={index}>
-                                <label>
-                                    OIB sudionika {index + 1}:
-                                    <input
-                                        type="text"
-                                        value={oib}
-                                        onChange={(event) => handleOibChange(index, event)}
-                                    />
-                                </label>
-                            </div>
+                            <Form.Group key={index} controlId={`participant-${index}`}>
+                                <Form.Label className="label">Sudionik {index + 1}</Form.Label>
+                                <Form.Control
+                                    as="select"
+                                    value={oibs[index] ?? ''}
+                                    id={`person-select-${index}`}
+                                    onChange={(event) => handleOibChange(index, event)}
+                                    className="control"
+                                >
+                                    <option value="" disabled>Izaberi osobu</option>
+                                    {person.map(p => (
+                                        <option key={p.personId} value={p.oib}>
+                                            {p.name} {p.surname}, {p.oib}
+                                        </option>
+                                    ))}
+                                </Form.Control>
+                            </Form.Group>
                         ))}
                         <button type="button" onClick={addOibField}>Dodaj sudionika</button>
-                        <button type="submit" className="links" onClick={handleChangeClick}>Potvrdi</button>
+                        <button type="submit" className="links button-space" onClick={handleChangeClick}>Potvrdi</button>
                     </Form>
                 )}
             </div>

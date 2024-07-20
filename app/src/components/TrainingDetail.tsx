@@ -1,8 +1,8 @@
 import {SetStateAction, useEffect, useRef, useState} from "react";
 import axios from "axios";
-import {Link, useNavigate, useParams} from "react-router-dom";
-import './ClubManager.css'
-import {Button, Form} from "react-bootstrap";
+import {useNavigate, useParams} from "react-router-dom";
+import './Manager.css'
+import {Form} from "react-bootstrap";
 
 interface Training {
     trainingId: number;
@@ -14,9 +14,17 @@ interface Training {
     players: Set<string>;
 }
 
+interface Person {
+    personId: number;
+    oib: string;
+    name: string;
+    surname: string;
+}
+
 function TrainingDetail() {
     const { coachId, trainingId } = useParams<{ coachId: string, trainingId: string }>();
     const [training, setTraining] = useState<Training>();
+    const [players, setPlayers] = useState<Person[]>([]);
     const [showChangeButton, setShowChangeButton] = useState(false);
     const [showDeleteButton, setShowDeleteButton] = useState(false);
     const navigate = useNavigate();
@@ -36,7 +44,10 @@ function TrainingDetail() {
         axios.get(`/coaches/${coachId}/training-sessions/${trainingId}`)
             .then(response => setTraining(response.data))
             .catch(error => console.error("Error fetching training session: ", error));
-    }, [trainingId, coachId])
+        axios.get(`/coaches/${coachId}/players`)
+            .then(response => setPlayers(response.data))
+            .catch(error => console.error("Error fetching players: ", error));
+    }, [trainingId, coachId, players])
 
     const handleDeleteClick = async () => {
         try {
@@ -61,6 +72,7 @@ function TrainingDetail() {
 
     const handleChangeClick = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
+        setFormError("");
 
         const requiredFields =[
             trainingTimestamp,
@@ -79,22 +91,6 @@ function TrainingDetail() {
             }
 
             return;
-        }
-
-        const oibRegex = /^\d{11}$/;
-        for (let oib of oibs) {
-            if (!oibRegex.test(oib)) {
-                setFormError("Format oib-a je neispravan!");
-
-                if (errorRef.current) {
-                    errorRef.current.scrollIntoView({
-                        behavior: "smooth",
-                        block: "start",
-                    });
-                }
-
-                return;
-            }
         }
 
         try {
@@ -139,7 +135,7 @@ function TrainingDetail() {
     const handleDescriptionChange = (e: {
         target: { value: SetStateAction<string> };
     }) => setDescription(e.target.value);
-    const handleOibChange = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleOibChange = (index: number, event: { target: { value: string; }; }) => {
         const newOibs = oibs.slice();
         newOibs[index] = event.target.value;
         setOibs(newOibs);
@@ -148,12 +144,23 @@ function TrainingDetail() {
         target: { value: SetStateAction<string> };
     }) => setDuration(e.target.value);
 
+    function formatDateTime(dateString: string | undefined): string {
+        if (dateString == undefined) return "";
+        const date = new Date(dateString);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // Mjeseci su 0-indeksirani
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}.${month}.${year}. ${hours}:${minutes}`;
+    }
+
     document.title = "Trening";
     return (
         <div>
             <div className="container">
                 <h1>Podaci o treningu</h1>
-                <p><strong>Datum i vrijeme treninga: </strong>{training?.trainingTimestamp}</p>
+                <p><strong>Datum i vrijeme treninga: </strong>{formatDateTime(training?.trainingTimestamp)}</p>
                 <p><strong>Trajanje: </strong>{training?.duration}</p>
                 <p><strong>Opis: </strong>{training?.description}</p>
                 <p><strong>Trener: </strong>{training?.coach}</p>
@@ -242,19 +249,26 @@ function TrainingDetail() {
                             />
                         </Form.Group>
                         {oibs.map((oib, index) => (
-                            <div key={index}>
-                                <label>
-                                    OIB tenisača {index + 1}:
-                                    <input
-                                        type="text"
-                                        value={oib}
-                                        onChange={(event) => handleOibChange(index, event)}
-                                    />
-                                </label>
-                            </div>
+                            <Form.Group key={index} controlId={`player-${index}`}>
+                                <Form.Label className="label">Sudionik {index + 1}</Form.Label>
+                                <Form.Control
+                                    as="select"
+                                    value={oibs[index] ?? ''}
+                                    id={`player-select-${index}`}
+                                    onChange={(event) => handleOibChange(index, event)}
+                                    className="control"
+                                >
+                                    <option value="" disabled>Izaberi igrača</option>
+                                    {players.map(p => (
+                                        <option key={p.personId} value={p.oib}>
+                                            {p.name} {p.surname}, {p.oib}
+                                        </option>
+                                    ))}
+                                </Form.Control>
+                            </Form.Group>
                         ))}
                         <button type="button" onClick={addOibField}>Dodaj prisutnog tenisača</button>
-                        <button type="submit" className="links" onClick={handleChangeClick}>Potvrdi</button>
+                        <button type="submit" className="links button-space" onClick={handleChangeClick}>Potvrdi</button>
                     </Form>
                 )}
             </div>

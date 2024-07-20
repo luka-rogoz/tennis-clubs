@@ -72,11 +72,33 @@ public class DoubleService {
     }
 
     public List<GetMatchDTO> getAllDoubleMatches(Long pairId) {
-        return Stream.concat(pairRepository.findByPairId(pairId).orElseThrow().getDoublesMatchesPlayedAsHosts().
-                stream(), pairRepository.findByPairId(pairId).orElseThrow().getDoublesMatchesPlayedAsGuests().
-                stream()).map(m -> new GetMatchDTO(m.getMatchId(), m.getMatchTimestamp(), m.getMatchResult(),
-                m.getDuration(), m.getStage(), m.getPair1().getPlayer1().getSurname() + "-" + m.getPair1()
-                .getPlayer2().getSurname() + ", " + m.getPair1().getPairId(), m.getPair2().getPlayer1().getSurname() + "-" + m.getPair2()
-                .getPlayer2().getSurname() + ", " + m.getPair2().getPairId(), m.getCourt().getName(), m.getTournament().getName(), m.getTournament().getCategory().getType())).toList();
+        return Stream.concat(
+                pairRepository.findByPairId(pairId).orElseThrow().getDoublesMatchesPlayedAsHosts().stream(),
+                pairRepository.findByPairId(pairId).orElseThrow().getDoublesMatchesPlayedAsGuests().stream()
+        ).map(m -> {
+            String[] scores = m.getMatchResult().split("-");
+            int hostScore = Integer.parseInt(scores[0]);
+            int guestScore = Integer.parseInt(scores[1]);
+
+            boolean isHost = m.getPair1().getPairId().equals(pairId);
+            boolean pairWon = (isHost && hostScore > guestScore) || (!isHost && guestScore > hostScore);
+
+            return new GetMatchDTO(
+                    m.getMatchId(),
+                    m.getMatchTimestamp(),
+                    m.getMatchResult(),
+                    m.getDuration(),
+                    m.getStage(),
+                    m.getPair1().getPlayer1().getSurname() + "-" + m.getPair1().getPlayer2().getSurname() + ", " + m.getPair1().getPairId(),
+                    m.getPair2().getPlayer1().getSurname() + "-" + m.getPair2().getPlayer2().getSurname() + ", " + m.getPair2().getPairId(),
+                    m.getCourt().getName(),
+                    m.getTournament().getName(),
+                    m.getTournament().getCategory().getType(),
+                    m.getTournament().getCategory().getAgeLimit(),
+                    m.getTournament().getCategory().getSexLimit(),
+                    pairWon ? 1 : 0
+            );
+        }).toList();
     }
+
 }
